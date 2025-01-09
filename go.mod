@@ -3,10 +3,10 @@ module poly-bridge
 go 1.14
 
 require (
-	github.com/block-vision/sui-go-sdk v1.0.5
 	github.com/Zilliqa/gozilliqa-sdk v1.2.1-0.20210927032600-4c733f2cb879
 	github.com/antihax/optional v1.0.0
 	github.com/beego/beego/v2 v2.0.1
+	github.com/block-vision/sui-go-sdk v1.0.5
 	github.com/btcsuite/btcd v0.22.0-beta
 	github.com/btcsuite/goleveldb v1.0.0
 	github.com/cosmos/cosmos-sdk v0.39.1
@@ -14,6 +14,7 @@ require (
 	github.com/ethereum/go-ethereum v1.9.25
 	github.com/gateio/gateapi-go/v6 v6.23.2
 	github.com/go-redis/redis v6.14.2+incompatible
+	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.0.0-20221020003552-4126fa611266
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/howeyc/gopass v0.0.0-20190910152052-7cb4b85ec19c
 	github.com/joeqian10/neo-gogogo v0.0.0-20201214075916-44b70d175579
@@ -30,12 +31,11 @@ require (
 	github.com/portto/aptos-go-sdk v0.0.0-20221025115549-5c74acafa193
 	github.com/rubblelabs/ripple v0.0.0-20220222071018-38c1a8b14c18
 	github.com/starcoinorg/starcoin-go v0.0.0-20220105024102-530daedc128b
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.8.2
 	github.com/tendermint/tendermint v0.33.7
 	github.com/urfave/cli v1.22.4
 	gorm.io/driver/mysql v1.0.3
 	gorm.io/gorm v1.20.8
-	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.0.0-20221020003552-4126fa611266
 )
 
 replace (

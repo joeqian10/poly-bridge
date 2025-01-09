@@ -21,11 +21,13 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"poly-bridge/cacheRedis"
 	"runtime"
 	"syscall"
 
+	"poly-bridge/cacheRedis"
+
 	"github.com/polynetwork/bridge-common/metrics"
+
 	"poly-bridge/activity"
 	"poly-bridge/basedef"
 	"poly-bridge/chainfeelisten"

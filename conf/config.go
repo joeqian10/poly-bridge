@@ -19,9 +19,10 @@ package conf
 
 import (
 	"encoding/json"
-	"poly-bridge/basedef"
 	"strings"
 	"time"
+
+	"poly-bridge/basedef"
 
 	"github.com/beego/beego/v2/core/logs"
 	"github.com/urfave/cli"
@@ -384,9 +385,9 @@ func NewConfig(filePath string) *Config {
 	}
 
 	GlobalConfig = config
-	initPolyProxy()
-	initEstimateProxy()
-	initEstimateFeeMin()
+	//initPolyProxy()
+	//initEstimateProxy()
+	//initEstimateFeeMin()
 	return config
 }
 

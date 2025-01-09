@@ -20,22 +20,20 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	//http2 "net/http"
+	_ "net/http/pprof"
 	"os"
-	"poly-bridge/basedef"
-	"poly-bridge/cacheRedis"
-	"poly-bridge/common"
-	"poly-bridge/conf"
-	"poly-bridge/explorer"
-	"poly-bridge/http"
-	"poly-bridge/nft_http"
 
 	"github.com/beego/beego/v2/core/logs"
 	"github.com/beego/beego/v2/server/web"
 	"github.com/beego/beego/v2/server/web/context"
 	"github.com/beego/beego/v2/server/web/filter/cors"
 	"github.com/urfave/cli"
-	//http2 "net/http"
-	_ "net/http/pprof"
+
+	"poly-bridge/basedef"
+	"poly-bridge/cacheRedis"
+	"poly-bridge/conf"
+	"poly-bridge/explorer"
 )
 
 func main() {
@@ -73,7 +71,7 @@ func run(ctx *cli.Context) {
 	logs.SetLogger(logs.AdapterFile, fmt.Sprintf(`{"filename":"%s"}`, config.HttpLogFile))
 
 	basedef.ConfirmEnv(config.Env)
-	common.SetupChainsSDK(config)
+	//common.SetupChainsSDK(config)
 
 	web.InsertFilter("*", web.BeforeRouter, cors.Allow(
 		&cors.Options{
@@ -86,10 +84,11 @@ func run(ctx *cli.Context) {
 	))
 
 	// TG bot
-	common.TgBotInit()
+	//common.TgBotInit()
 
 	// bridge http
-	http.Init()
+	//http.Init()
+
 	// explorer http
 	explorer.Init()
 	// redis
@@ -98,17 +97,28 @@ func run(ctx *cli.Context) {
 	// register http routers
 	web.AddNamespace(
 		web.NewNamespace("/v1",
-			nft_http.Init(config),
-			http.GetRouter(config),
+			//nft_http.Init(config),
+			//http.GetRouter(config),
 			explorer.GetRouter(),
+
+			//web.NSNamespace("/explorer",
+			//	web.NSRouter("/getcrosstx", &ExplorerController{}, "get:GetCrossTx")
+			//),
 		),
 	)
+
+	tree := web.PrintTree()
+	methods := tree["Data"].(web.M)
+	for k, v := range methods {
+		fmt.Printf("%s => %v\n", k, v)
+		fmt.Println()
+	}
 
 	// Insert web config
 	web.BConfig.Listen.HTTPAddr = config.HttpConfig.Address
 	web.BConfig.Listen.HTTPPort = config.HttpConfig.Port
 	web.BConfig.RunMode = config.RunMode
-	web.BConfig.AppName = "bridgehttp"
+	web.BConfig.AppName = "bridge-http"
 	web.BConfig.CopyRequestBody = true
 	web.BConfig.EnableErrorsRender = false
 

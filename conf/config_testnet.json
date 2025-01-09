@@ -9,11 +9,11 @@
     "URL": "localhost:3306",
     "Scheme": "poly",
     "User": "root",
-    "Password": "123456"
+    "Password": "rwRkh5AAbJmDoKMLAS4g"
   },
   "HttpConfig": {
     "Address": "0.0.0.0",
-    "Port": 8084
+    "Port": 8090
   },
   "IPPortConfig": {
     "DingIP": "https://oapi.dingtalk.com/robot/send?access_token=63395d10b3104b3b3817db7d6d673b4cd7452b7a375e333dd07b85f17c6c9ca6",
@@ -22,8 +22,8 @@
     "LargeTxAmountAlarmDingIP": "https://oapi.dingtalk.com/robot/send?access_token=9892e047c0f57dd76fa0817b1a9aedc17a3ba71098b27b2f487de1279ea9b134"
   },
   "RedisConfig": {
-    "addr": "redis:6379",
-    "password": "abcdef",
+    "addr": "localhost:6379",
+    "password": "",
     "proto": "tcp",
     "pool_size": 50,
     "min_idle_conns": 10,

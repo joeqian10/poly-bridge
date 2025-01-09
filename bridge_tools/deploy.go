@@ -18,11 +18,12 @@
 package main
 
 import (
+	"strings"
+
 	"poly-bridge/bridge_tools/conf"
 	serverconf "poly-bridge/conf"
 	"poly-bridge/crosschaindao"
 	"poly-bridge/models"
-	"strings"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -35,27 +36,30 @@ func startDeploy(cfg *conf.DeployConfig, servercfg *serverconf.Config) {
 	if dbCfg.Debug == true {
 		Logger = Logger.LogMode(logger.Info)
 	}
-	db, err := gorm.Open(mysql.Open(dbCfg.User+":"+dbCfg.Password+"@tcp("+dbCfg.URL+")/"+
-		dbCfg.Scheme+"?charset=utf8"), &gorm.Config{Logger: Logger})
+	db, err := gorm.Open(mysql.Open(dbCfg.User+":"+dbCfg.Password+"@tcp("+dbCfg.URL+")/"+dbCfg.Scheme+"?charset=utf8"),
+		&gorm.Config{
+			DisableForeignKeyConstraintWhenMigrating: true,
+			Logger:                                   Logger,
+		})
 	if err != nil {
 		panic(err)
 	}
 	err = db.Debug().AutoMigrate(
 		&models.ChainFee{},
 		&models.Chain{},
-		&models.DstSwap{},
 		&models.DstTransaction{},
 		&models.DstTransfer{},
+		&models.DstSwap{},
 		&models.NFTProfile{},
 		&models.PolyTransaction{},
 		&models.PriceMarket{},
-		&models.SrcSwap{},
 		&models.SrcTransaction{},
 		&models.SrcTransfer{},
+		&models.SrcSwap{},
 		&models.TimeStatistic{},
+		&models.Token{},
 		&models.TokenBasic{},
 		&models.TokenMap{},
-		&models.Token{},
 		&models.WrapperTransaction{},
 	)
 	if err != nil {
