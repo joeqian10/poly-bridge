@@ -1,5 +1,5 @@
 {
-  "Server": "polybridge",
+  "Server": "poly-bridge",
   "Backup": false,
   "Env": "testnet",
   "LogFile": "logs/bridge.log",

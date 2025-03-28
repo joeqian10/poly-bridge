@@ -1,0 +1,9 @@
+testnet:
+
+go build -tags testnet -o bridge-server ./cmd
+./bridge-server -config config_joe_testnet.json
+
+go build -tags testnet -o bridge-http .
+./bridge-http -config config_joe_testnet.json
+
+
