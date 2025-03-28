@@ -18,21 +18,17 @@
 package crosschainlisten
 
 import (
-	"fmt"
 	"math"
 	"runtime/debug"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/beego/beego/v2/core/logs"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/polynetwork/bridge-common/metrics"
 
 	"poly-bridge/basedef"
 	"poly-bridge/cacheRedis"
-	"poly-bridge/common"
 	"poly-bridge/conf"
 	"poly-bridge/crosschaindao"
 	"poly-bridge/crosschainlisten/ethereumlisten"
@@ -435,85 +431,6 @@ func (ccl *CrossChainListen) isO3SwapTx(src *models.SrcTransaction) bool {
 }
 
 func (ccl *CrossChainListen) sendLargeTransactionDingAlarm(srcTransaction *models.SrcTransaction, token *models.Token, largeTxAmount int64, amount decimal.Decimal) error {
-	exceedingAmount := strconv.FormatInt(largeTxAmount, 10)
-	if amount.Cmp(decimal.NewFromInt(10000000)) >= 0 {
-		exceedingAmount = "1000w"
-	} else if amount.Cmp(decimal.NewFromInt(5000000)) >= 0 {
-		exceedingAmount = "500w"
-	} else if amount.Cmp(decimal.NewFromInt(1000000)) >= 0 {
-		exceedingAmount = "100w"
-	}
-	//ss := "A large transaction exceeding " + exceedingAmount + " USD was detected.\n"
-	srcChainName := strconv.FormatUint(srcTransaction.ChainId, 10)
-	srcChain, err := ccl.db.GetChain(srcTransaction.ChainId)
-	if err == nil {
-		srcChainName = srcChain.Name
-	}
 
-	dstChainName := strconv.FormatUint(srcTransaction.DstChainId, 10)
-	dstChain, err := ccl.db.GetChain(srcTransaction.DstChainId)
-	if err == nil {
-		dstChainName = dstChain.Name
-	}
-	if srcTransaction.SrcSwap != nil && srcTransaction.SrcSwap.DstChainId != 0 {
-		dstChainName = strconv.FormatUint(srcTransaction.SrcSwap.DstChainId, 10)
-		dstChain, err := ccl.db.GetChain(srcTransaction.SrcSwap.DstChainId)
-		if err == nil {
-			dstChainName = dstChain.Name
-		}
-	}
-
-	title := fmt.Sprintf("*Large transaction exceeding %s USD (%s->%s)*\n", exceedingAmount, srcChainName, dstChainName)
-	//ss += "Asset " + token.Name + "(" + srcChainName + "->" + dstChainName + ")\n"
-	txType := "SWAP"
-	if srcTransaction.SrcSwap != nil {
-		switch srcTransaction.SrcSwap.Type {
-		case basedef.SWAP_SWAP:
-			txType = "SWAP"
-		case basedef.SWAP_ROLLBACK:
-			txType = "ROLLBACK"
-		case basedef.SWAP_ADDLIQUIDITY:
-			txType = "ADDLIQUIDITY"
-		case basedef.SWAP_REMOVELIQUIDITY:
-			txType = "REMOVELIQUIDITY"
-		}
-	}
-	largeTx := basedef.LargeTx{
-		Asset:     token.Name,
-		From:      srcChainName,
-		To:        dstChainName,
-		Type:      txType,
-		Amount:    decimal.NewFromBigInt(&srcTransaction.SrcTransfer.Amount.Int, 0).Div(decimal.NewFromInt(basedef.Int64FromFigure(int(token.Precision)))).String(),
-		USDAmount: amount.String(),
-		Hash:      srcTransaction.Hash,
-		User:      srcTransaction.User,
-		Time:      time.Unix(int64(srcTransaction.Time), 0).Format("2006-01-02 15:04:05"),
-	}
-
-	text := fmt.Sprintf("%s\n*Asset*: %s\n*Type*: %s\n*Amount*: %s (%s USD)\n*Hash*: %s\n*User*: %s\n*Time*: %s\n",
-		title,
-		largeTx.Asset,
-		largeTx.Type,
-		largeTx.Amount,
-		largeTx.USDAmount,
-		largeTx.Hash,
-		largeTx.User,
-		largeTx.Time,
-	)
-
-	text = fmt.Sprintf("%s\n[List All](%s)\n%s",
-		text,
-		fmt.Sprintf("%stoken=%s", conf.GlobalConfig.BotConfig.BaseUrl+conf.GlobalConfig.BotConfig.ListLargeTxUrl, conf.GlobalConfig.BotConfig.ApiToken),
-		"-----------------------------------------",
-	)
-
-	msg := tgbotapi.NewMessage(conf.GlobalConfig.BotConfig.LargeTxChatId, text)
-	msg.ParseMode = tgbotapi.ModeMarkdown
-	msg.DisableWebPagePreview = true
-
-	_, err = common.SendTgBotMessage(msg)
-	if err != nil {
-		logs.Error("send large transaction alarm failed. hash=%s, err:%s", largeTx.Hash, err.Error())
-	}
-	return err
+	return nil
 }

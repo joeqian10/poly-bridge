@@ -3,26 +3,22 @@ package healthmonitor
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/beego/beego/v2/core/logs"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
-	"poly-bridge/basedef"
-	"poly-bridge/cacheRedis"
-	"poly-bridge/common"
-	"poly-bridge/conf"
-	"poly-bridge/monitor/healthmonitor/ethereummonitor"
-	"poly-bridge/monitor/healthmonitor/neo3monitor"
-	"poly-bridge/monitor/healthmonitor/neomonitor"
-	"poly-bridge/monitor/healthmonitor/ontologymonitor"
-	"poly-bridge/monitor/healthmonitor/polymonitor"
-	"poly-bridge/monitor/healthmonitor/ripplemonitor"
-	"poly-bridge/monitor/healthmonitor/zilliqamonitor"
-	"poly-bridge/utils/transactions"
 	"runtime/debug"
 	"strconv"
 	"time"
+
+	"github.com/beego/beego/v2/core/logs"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+
+	"poly-bridge/basedef"
+	"poly-bridge/cacheRedis"
+	"poly-bridge/conf"
+	"poly-bridge/monitor/healthmonitor/ethereummonitor"
+	"poly-bridge/monitor/healthmonitor/neo3monitor"
+	"poly-bridge/monitor/healthmonitor/polymonitor"
+	"poly-bridge/utils/transactions"
 )
 
 var db *gorm.DB
@@ -131,11 +127,8 @@ func (h *HealthMonitor) NodeMonitor(config *conf.Config) {
 					if lastNodeStatus != nil && nodeStatus.Height == lastNodeStatus.Height {
 						nodeHeightNoGrowthTime = nodeStatus.Time - lastNodeStatus.Time
 						var abnormalBlockTime int64
-						if h.handle.GetChainId() == basedef.ARBITRUM_CROSSCHAIN_ID {
-							abnormalBlockTime = 900
-						} else {
-							abnormalBlockTime = 300
-						}
+						abnormalBlockTime = 300
+
 						if nodeHeightNoGrowthTime > abnormalBlockTime {
 							nodeStatus.Status = append(nodeStatus.Status, fmt.Sprintf("node height no growth more than %d s", nodeHeightNoGrowthTime))
 						}
@@ -380,134 +373,28 @@ func needSendRelayerAccountStatusAlarm(relayerStatus *basedef.RelayerAccountStat
 }
 
 func sendNodeStatusDingAlarm(nodeStatus *basedef.NodeStatus, isRecover bool) error {
-	title := ""
-	status := ""
-	if isRecover {
-		title = fmt.Sprintf("*%s Node Recover*\n", nodeStatus.ChainName)
-		status = basedef.StatusOk
-	} else {
-		title = fmt.Sprintf("*%s Node Alarm*\n", nodeStatus.ChainName)
-		if len(nodeStatus.Status) == 0 {
-			status = basedef.StatusOk
-		} else {
-			for _, info := range nodeStatus.Status {
-				status = fmt.Sprintf("%s\n%s", status, info)
-			}
-		}
 
-	}
-
-	text := fmt.Sprintf("%s\n*Node*: %s\n*Height*: %d\n*Status*: %s\n*Time*: %s\n",
-		title,
-		nodeStatus.Url,
-		nodeStatus.Height,
-		status,
-		time.Unix(nodeStatus.Time, 0).Format("2006-01-02 15:04:05"),
-	)
-
-	if !isRecover {
-		text = fmt.Sprintf("%s\n[Ignore For 1 Day](%s)    [Cancel Ignore](%s)    [List All](%s)\n%s",
-			text,
-			fmt.Sprintf("%stoken=%s&node=%s&day=%d", conf.GlobalConfig.BotConfig.BaseUrl+conf.GlobalConfig.BotConfig.IgnoreNodeStatusAlarmUrl, conf.GlobalConfig.BotConfig.ApiToken, nodeStatus.Url, 1),
-			fmt.Sprintf("%stoken=%s&node=%s&day=%d", conf.GlobalConfig.BotConfig.BaseUrl+conf.GlobalConfig.BotConfig.IgnoreNodeStatusAlarmUrl, conf.GlobalConfig.BotConfig.ApiToken, nodeStatus.Url, 0),
-			fmt.Sprintf("%stoken=%s", conf.GlobalConfig.BotConfig.BaseUrl+conf.GlobalConfig.BotConfig.ListNodeStatusUrl, conf.GlobalConfig.BotConfig.ApiToken),
-			"-----------------------------------------",
-		)
-	} else {
-		text = fmt.Sprintf("%s\n[List All](%s)\n%s",
-			text,
-			fmt.Sprintf("%stoken=%s", conf.GlobalConfig.BotConfig.BaseUrl+conf.GlobalConfig.BotConfig.ListNodeStatusUrl, conf.GlobalConfig.BotConfig.ApiToken),
-			"-----------------------------------------",
-		)
-	}
-
-	msg := tgbotapi.NewMessage(conf.GlobalConfig.BotConfig.NodeStatusChatId, text)
-	msg.ParseMode = tgbotapi.ModeMarkdown
-	msg.DisableWebPagePreview = true
-	_, err := common.SendTgBotMessage(msg)
-	return err
+	return nil
 }
 
 func sendChainStatusDingAlarm(chainStatus basedef.ChainStatus) error {
-	status := ""
-	for k, v := range chainStatus.StatusTimeMap {
-		status = fmt.Sprintf("%s\n%s %s", status, k, time.Unix(v, 0).Format("2006-01-02 15:04:05"))
-	}
-	title := fmt.Sprintf("*%s Alarm!!!*", chainStatus.ChainName)
 
-	text := fmt.Sprintf("%s\n*Height*: %d\n*Status*: %s\n*Time*: %s\n",
-		title,
-		chainStatus.Height,
-		status,
-		time.Unix(chainStatus.Time, 0).Format("2006-01-02 15:04:05"),
-	)
-	text = fmt.Sprintf("%s\n[List All](%s)\n%s",
-		text,
-		fmt.Sprintf("%stoken=%s", conf.GlobalConfig.BotConfig.BaseUrl+conf.GlobalConfig.BotConfig.ListNodeStatusUrl, conf.GlobalConfig.BotConfig.ApiToken),
-		"-----------------------------------------",
-	)
-
-	msg := tgbotapi.NewMessage(conf.GlobalConfig.BotConfig.NodeStatusChatId, text)
-	msg.ParseMode = tgbotapi.ModeMarkdown
-	msg.DisableWebPagePreview = true
-	_, err := common.SendTgBotMessage(msg)
-	return err
+	return nil
 }
 
 func sendRelayerAccountStatusDingAlarm(relayerStatus *basedef.RelayerAccountStatus, isRecover bool) error {
-	title := ""
-	if isRecover {
-		title = fmt.Sprintf("*%s relayer refilled*", relayerStatus.ChainName)
-	} else {
-		title = fmt.Sprintf("*%s relayer insufficient*", relayerStatus.ChainName)
-	}
 
-	text := fmt.Sprintf("%s\n*Address*: %s\n*Balance*: %f\n*Threshold*:%f\n*Time*: %s\n",
-		title,
-		relayerStatus.Address,
-		relayerStatus.Balance,
-		relayerStatus.Threshold,
-		time.Unix(time.Now().Unix(), 0).Format("2006-01-02 15:04:05"),
-	)
-
-	text = fmt.Sprintf("%s\n[List All](%s)\n%s",
-		text,
-		fmt.Sprintf("%stoken=%s", conf.GlobalConfig.BotConfig.BaseUrl+conf.GlobalConfig.BotConfig.ListRelayerAccountStatusUrl, conf.GlobalConfig.BotConfig.ApiToken),
-		"-----------------------------------------",
-	)
-
-	msg := tgbotapi.NewMessage(conf.GlobalConfig.BotConfig.RelayerAccountStatusChatId, text)
-	msg.ParseMode = tgbotapi.ModeMarkdown
-	msg.DisableWebPagePreview = true
-	_, err := common.SendTgBotMessage(msg)
-	return err
+	return nil
 }
 
 func NewHealthMonitorHandle(monitorConfig *conf.HealthMonitorConfig) MonitorHandle {
 	switch monitorConfig.ChainId {
 	case basedef.POLY_CROSSCHAIN_ID:
 		return polymonitor.NewPolyHealthMonitor(monitorConfig)
-	case basedef.ETHEREUM_CROSSCHAIN_ID, basedef.O3_CROSSCHAIN_ID, basedef.BSC_CROSSCHAIN_ID, basedef.PLT_CROSSCHAIN_ID,
-		basedef.OK_CROSSCHAIN_ID, basedef.HECO_CROSSCHAIN_ID, basedef.MATIC_CROSSCHAIN_ID, basedef.ARBITRUM_CROSSCHAIN_ID,
-		basedef.XDAI_CROSSCHAIN_ID, basedef.FANTOM_CROSSCHAIN_ID, basedef.AVAX_CROSSCHAIN_ID, basedef.OPTIMISTIC_CROSSCHAIN_ID,
-		basedef.METIS_CROSSCHAIN_ID, basedef.RINKEBY_CROSSCHAIN_ID, basedef.BOBA_CROSSCHAIN_ID, basedef.OASIS_CROSSCHAIN_ID,
-		basedef.HARMONY_CROSSCHAIN_ID, basedef.KCC_CROSSCHAIN_ID, basedef.BYTOM_CROSSCHAIN_ID, basedef.HSC_CROSSCHAIN_ID,
-		basedef.KAVA_CROSSCHAIN_ID, basedef.CUBE_CROSSCHAIN_ID, basedef.ZKSYNC_CROSSCHAIN_ID, basedef.CELO_CROSSCHAIN_ID,
-		basedef.CLOVER_CROSSCHAIN_ID, basedef.CONFLUX_CROSSCHAIN_ID, basedef.ASTAR_CROSSCHAIN_ID, basedef.BRISE_CROSSCHAIN_ID,
-		basedef.DEXIT_CROSSCHAIN_ID, basedef.CLOUDTX_CROSSCHAIN_ID, basedef.XINFIN_CROSSCHAIN_ID, basedef.ONTEVM_CROSSCHAIN_ID:
+	case basedef.ETHEREUM_CROSSCHAIN_ID, basedef.BSC_CROSSCHAIN_ID, basedef.ONTEVM_CROSSCHAIN_ID:
 		return ethereummonitor.NewEthereumHealthMonitor(monitorConfig)
-	case basedef.NEO_CROSSCHAIN_ID:
-		return neomonitor.NewNeoHealthMonitor(monitorConfig)
-	case basedef.ONT_CROSSCHAIN_ID:
-		return ontologymonitor.NewOntologyHealthMonitor(monitorConfig)
-	//case basedef.SWITCHEO_CROSSCHAIN_ID:
-	//	return switcheomonitor.NewSwitcheoHealthMonitor(monitorConfig)
 	case basedef.NEO3_CROSSCHAIN_ID:
 		return neo3monitor.NewNeo3HealthMonitor(monitorConfig)
-	case basedef.ZILLIQA_CROSSCHAIN_ID:
-		return zilliqamonitor.NewZilliqaHealthMonitor(monitorConfig)
-	case basedef.RIPPLE_CROSSCHAIN_ID:
-		return ripplemonitor.NewRippleHealthMonitor(monitorConfig)
 	default:
 		return nil
 	}
