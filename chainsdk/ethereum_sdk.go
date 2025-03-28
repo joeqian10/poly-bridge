@@ -20,6 +20,9 @@ package chainsdk
 import (
 	"context"
 	"fmt"
+	//"github.com/polynetwork/eth-contracts/go_abi/erc20_abi"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -27,10 +30,6 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
-	"poly-bridge/basedef"
-
-	//"github.com/polynetwork/eth-contracts/go_abi/erc20_abi"
-	"math/big"
 )
 
 type EthereumSdk struct {
@@ -98,13 +97,7 @@ func (s *EthereumSdk) GetBlockTimeByNumber(chainId, number uint64) (timestamp ui
 		Time string `json:"timestamp"`
 	}
 
-	var header interface{}
-	switch chainId {
-	case basedef.ZKSYNC_CROSSCHAIN_ID, basedef.CELO_CROSSCHAIN_ID:
-		header = &Header{}
-	default:
-		header = &types.Header{}
-	}
+	header := &types.Header{}
 
 	var newNumber *big.Int
 	if number < 0 {
@@ -117,16 +110,9 @@ func (s *EthereumSdk) GetBlockTimeByNumber(chainId, number uint64) (timestamp ui
 	for err != nil {
 		return 0, err
 	}
-	switch chainId {
-	case basedef.ZKSYNC_CROSSCHAIN_ID, basedef.CELO_CROSSCHAIN_ID:
-		if res, ok := header.(*Header); ok {
-			timestamp, err = hexutil.DecodeUint64(res.Time)
-		}
-	default:
-		if res, ok := header.(*types.Header); ok {
-			timestamp = res.Time
-		}
-	}
+
+	timestamp = header.Time
+
 	return
 }
 

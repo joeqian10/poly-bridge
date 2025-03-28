@@ -28,24 +28,21 @@ import (
 
 	"github.com/polynetwork/bridge-common/metrics"
 
-	"poly-bridge/activity"
+	"github.com/beego/beego/v2/core/logs"
+	"github.com/beego/beego/v2/server/web"
+	"github.com/urfave/cli"
+
 	"poly-bridge/basedef"
-	"poly-bridge/chainfeelisten"
-	"poly-bridge/coinpricelisten"
 	"poly-bridge/common"
 	"poly-bridge/conf"
 	"poly-bridge/crosschaineffect"
 	"poly-bridge/crosschainlisten"
-	"poly-bridge/crosschainstats"
-
-	"github.com/beego/beego/v2/core/logs"
-	"github.com/beego/beego/v2/server/web"
-	"github.com/urfave/cli"
 )
 
 func setupApp() *cli.App {
 	app := cli.NewApp()
-	app.Usage = "poly-bridge Service"
+	app.Name = "bridge-server"
+	app.Usage = "poly-bridge cross chain backend"
 	app.Action = StartServer
 	app.Version = "1.0.0"
 	app.Copyright = "Copyright in 2019 The Ontology Authors"
@@ -82,30 +79,16 @@ func startServer(ctx *cli.Context) {
 	}
 	logs.SetLogger(logs.AdapterFile, fmt.Sprintf(`{"filename":"%s"}`, config.ServerLogFile))
 
-	//{
-	//	conf, _ := json.Marshal(config)
-	//	logs.Info("%s\n", string(conf))
-	//}
 	//initialize redis
 	cacheRedis.Init()
-
-	// TG bot
-	common.TgBotInit()
 
 	metrics.Init("bridge")
 	basedef.ConfirmEnv(config.Env)
 	common.SetupChainsSDK(config)
-	if config.Backup {
-		crosschainlisten.StartCrossChainListen(config)
-		crosschainlisten.StartCrossChainListenPatch(config)
-		return
-	}
+
+	// start cross chain
 	crosschainlisten.StartCrossChainListen(config)
-	coinpricelisten.StartCoinPriceListen(config.Server, config.CoinPriceUpdateSlot, config.CoinPriceListenConfig, config.DBConfig)
-	chainfeelisten.StartFeeListen(config.Server, config.FeeUpdateSlot, config.FeeListenConfig, config.DBConfig)
 	crosschaineffect.StartCrossChainEffect(config.Server, config.EventEffectConfig, config.DBConfig, config.RedisConfig)
-	crosschainstats.StartCrossChainStats(config.Server, config.StatsConfig, config.DBConfig, config.IPPortConfig, config.ChainListenConfig)
-	activity.StartActivity(config.Server, config.ActivityConfig, config.DBConfig)
 
 	metricConfig := config.MetricConfig
 	if metricConfig == nil {
@@ -144,10 +127,7 @@ func waitSignal() os.Signal {
 
 func stopServer() {
 	crosschainlisten.StopCrossChainListen()
-	coinpricelisten.StopCoinPriceListen()
-	chainfeelisten.StopFeeListen()
 	crosschaineffect.StopCrossChainEffect()
-	crosschainstats.StopCrossChainStats()
 }
 
 func main() {

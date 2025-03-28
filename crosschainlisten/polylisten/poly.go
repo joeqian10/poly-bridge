@@ -19,8 +19,10 @@ package polylisten
 
 import (
 	"fmt"
-	"github.com/beego/beego/v2/core/logs"
 	"math/big"
+
+	"github.com/beego/beego/v2/core/logs"
+
 	"poly-bridge/basedef"
 	"poly-bridge/chainsdk"
 	"poly-bridge/conf"
@@ -115,15 +117,10 @@ func (this *PolyChainListen) HandleNewBlock(height uint64) ([]*models.WrapperTra
 					polyDetail.SrcChainId = uint64(fchainid)
 					polyDetail.DstChainId = uint64(tchainid)
 					switch uint64(fchainid) {
-					case basedef.NEO_CROSSCHAIN_ID, basedef.NEO3_CROSSCHAIN_ID, basedef.ONT_CROSSCHAIN_ID:
+					case basedef.NEO3_CROSSCHAIN_ID:
 						polyDetail.SrcHash = basedef.HexStringReverse(states[3].(string))
 					default:
 						polyDetail.SrcHash = states[3].(string)
-					}
-					switch uint64(tchainid) {
-					case basedef.RIPPLE_CROSSCHAIN_ID:
-						sequence := states[5].(float64)
-						polyDetail.DstSequence = uint64(sequence)
 					}
 
 					polyDetails = append(polyDetails, polyDetail)
@@ -138,15 +135,10 @@ func (this *PolyChainListen) HandleNewBlock(height uint64) ([]*models.WrapperTra
 					mctx.SrcChainId = uint64(fchainid)
 					mctx.DstChainId = uint64(tchainid)
 					switch uint64(fchainid) {
-					case basedef.NEO_CROSSCHAIN_ID, basedef.NEO3_CROSSCHAIN_ID, basedef.ONT_CROSSCHAIN_ID:
+					case basedef.NEO3_CROSSCHAIN_ID:
 						mctx.SrcHash = basedef.HexStringReverse(states[3].(string))
 					default:
 						mctx.SrcHash = states[3].(string)
-					}
-					switch uint64(tchainid) {
-					case basedef.RIPPLE_CROSSCHAIN_ID:
-						sequence := states[5].(float64)
-						mctx.DstSequence = uint64(sequence)
 					}
 
 					polyTransactions = append(polyTransactions, mctx)

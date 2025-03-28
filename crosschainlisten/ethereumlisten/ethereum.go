@@ -25,6 +25,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
+
 	"poly-bridge/basedef"
 	"poly-bridge/chainsdk"
 	"poly-bridge/conf"
@@ -33,7 +35,6 @@ import (
 	"poly-bridge/go_abi/swapper_abi"
 	"poly-bridge/go_abi/wrapper_abi"
 	"poly-bridge/models"
-	"strings"
 
 	"github.com/beego/beego/v2/core/logs"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -206,17 +207,13 @@ func (this *EthereumChainListen) HandleNewBlock(height uint64) ([]*models.Wrappe
 			srcTransaction.Key = lockEvent.Txid
 			srcTransaction.Param = hex.EncodeToString(lockEvent.Value)
 			var lock *models.ProxyLockEvent
-			if srcTransaction.ChainId == basedef.PLT_CROSSCHAIN_ID && !this.isNFTECCMLockEvent(lockEvent) {
-				// TODO: with retry later
-				lock, _ = this.GetPaletteLockProxyLockEvent(common.HexToHash("0x" + lockEvent.TxHash))
-			} else {
-				for _, v := range proxyLockEvents {
-					if v.TxHash == lockEvent.TxHash {
-						lock = v
-						break
-					}
+			for _, v := range proxyLockEvents {
+				if v.TxHash == lockEvent.TxHash {
+					lock = v
+					break
 				}
 			}
+
 			if lock != nil {
 				toAssetHash := lock.ToAssetHash
 				srcTransfer := &models.SrcTransfer{}
@@ -228,12 +225,7 @@ func (this *EthereumChainListen) HandleNewBlock(height uint64) ([]*models.Wrappe
 				srcTransfer.Asset = models.FormatString(lock.FromAssetHash)
 				srcTransfer.Amount = models.NewBigInt(lock.Amount)
 				srcTransfer.DstChainId = uint64(lock.ToChainId)
-				if srcTransfer.DstChainId == basedef.APTOS_CROSSCHAIN_ID {
-					aptosAsset, err := hex.DecodeString(toAssetHash)
-					if err == nil {
-						toAssetHash = string(aptosAsset)
-					}
-				}
+
 				srcTransfer.DstAsset = models.FormatAssert(toAssetHash)
 				srcTransfer.DstUser = models.FormatString(lock.ToAddress)
 				srcTransaction.SrcTransfer = srcTransfer
@@ -296,16 +288,13 @@ func (this *EthereumChainListen) HandleNewBlock(height uint64) ([]*models.Wrappe
 			dstTransaction.Contract = models.FormatString(unLockEvent.Contract)
 			dstTransaction.PolyHash = unLockEvent.RTxHash
 			var unlock *models.ProxyUnlockEvent
-			if dstTransaction.ChainId == basedef.PLT_CROSSCHAIN_ID && !this.isNFTECCMUnlockEvent(unLockEvent) {
-				unlock = this.getPLTUnlock(common.HexToHash("0x" + unLockEvent.TxHash))
-			} else {
-				for _, v := range proxyUnlockEvents {
-					if v.TxHash == unLockEvent.TxHash {
-						unlock = v
-						break
-					}
+			for _, v := range proxyUnlockEvents {
+				if v.TxHash == unLockEvent.TxHash {
+					unlock = v
+					break
 				}
 			}
+
 			if unlock != nil {
 				dstTransfer := &models.DstTransfer{}
 				dstTransfer.TxHash = unLockEvent.TxHash
@@ -397,11 +386,7 @@ func (this *EthereumChainListen) getWrapperEventByBlockNumber1(contractAddr stri
 	}
 	if index != 0 {
 		for _, tx := range wrapperTransactions {
-			if this.GetChainId() == basedef.METIS_CROSSCHAIN_ID {
-				tx.FeeTokenHash = "deaddeaddeaddeaddeaddeaddeaddeaddead0000"
-			} else {
-				tx.FeeTokenHash = "0000000000000000000000000000000000000000"
-			}
+			tx.FeeTokenHash = "0000000000000000000000000000000000000000"
 		}
 	}
 	return wrapperTransactions, nil

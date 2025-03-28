@@ -21,22 +21,13 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
-	log "github.com/beego/beego/v2/core/logs"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"io/ioutil"
-	"math/big"
-	"net/http"
+
 	"poly-bridge/basedef"
-	"poly-bridge/chainsdk"
-	bcommon "poly-bridge/common"
-	"poly-bridge/conf"
-	"poly-bridge/go_abi/zk_abi"
 	"poly-bridge/utils/decimal"
-	"strconv"
-	"strings"
 )
 
 type Request struct {
@@ -168,12 +159,8 @@ func FormatAmount(precision uint64, amount *BigInt) string {
 
 func FeePrecison(chain uint64) int {
 	switch chain {
-	case basedef.BTC_CROSSCHAIN_ID, basedef.NEO_CROSSCHAIN_ID, basedef.SWITCHEO_CROSSCHAIN_ID, basedef.NEO3_CROSSCHAIN_ID:
+	case basedef.NEO3_CROSSCHAIN_ID:
 		return 8
-	case basedef.ONT_CROSSCHAIN_ID, basedef.STARCOIN_CROSSCHAIN_ID:
-		return 9
-	case basedef.ZILLIQA_CROSSCHAIN_ID:
-		return 12
 	default:
 		return 18
 	}
@@ -183,134 +170,22 @@ func FormatFee(chain uint64, fee *BigInt) string {
 	fee_new := decimal.NewFromBigInt(&fee.Int, 0)
 
 	switch chain {
-	case basedef.BTC_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 8)
-		return fee_new.Div(precision_new).String() + " BTC"
-	case basedef.ONT_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 9)
-		return fee_new.Div(precision_new).String() + " ONG"
 	case basedef.ONTEVM_CROSSCHAIN_ID:
 		precision_new := decimal.New(1, 18)
 		return fee_new.Div(precision_new).String() + " ONG(evm)"
+
 	case basedef.ETHEREUM_CROSSCHAIN_ID:
 		precision_new := decimal.New(1, 18)
 		return fee_new.Div(precision_new).String() + " ETH"
-	case basedef.NEO_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 8)
-		return fee_new.Div(precision_new).String() + " GAS"
-	case basedef.SWITCHEO_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 8)
-		return fee_new.Div(precision_new).String() + " SWTH"
+
 	case basedef.BSC_CROSSCHAIN_ID:
 		precision_new := decimal.New(1, 18)
 		return fee_new.Div(precision_new).String() + " BNB"
-	case basedef.O3_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 18)
-		return fee_new.Div(precision_new).String() + " O3"
-	case basedef.HECO_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 18)
-		return fee_new.Div(precision_new).String() + " HT"
-	case basedef.OK_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 18)
-		return fee_new.Div(precision_new).String() + " OKT"
-	case basedef.MATIC_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 18)
-		return fee_new.Div(precision_new).String() + " MATIC"
+
 	case basedef.NEO3_CROSSCHAIN_ID:
 		precision_new := decimal.New(1, 8)
 		return fee_new.Div(precision_new).String() + " GAS"
-	case basedef.ARBITRUM_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 18)
-		return fee_new.Div(precision_new).String() + " ETH"
-	case basedef.FANTOM_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 18)
-		return fee_new.Div(precision_new).String() + " FTM"
-	case basedef.XDAI_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 18)
-		feeString := fee_new.Div(precision_new).String()
-		if basedef.ENV == basedef.TESTNET {
-			return feeString + " POA"
-		}
-		return feeString + " XDai"
-	case basedef.ZILLIQA_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 12)
-		return fee_new.Div(precision_new).String() + " ZIL"
-	case basedef.AVAX_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 18)
-		return fee_new.Div(precision_new).String() + " AVAX"
-	case basedef.OPTIMISTIC_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 18)
-		return fee_new.Div(precision_new).String() + " ETH"
-	case basedef.METIS_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 18)
-		return fee_new.Div(precision_new).String() + " METIS"
-	case basedef.RINKEBY_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 18)
-		return fee_new.Div(precision_new).String() + " ETH"
-	case basedef.BOBA_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 18)
-		return fee_new.Div(precision_new).String() + " ETH"
-	case basedef.OASIS_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 18)
-		return fee_new.Div(precision_new).String() + " ROSE"
-	case basedef.HARMONY_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 18)
-		return fee_new.Div(precision_new).String() + " ONE"
-	case basedef.KCC_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 18)
-		return fee_new.Div(precision_new).String() + " KCS"
-	case basedef.BYTOM_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 18)
-		return fee_new.Div(precision_new).String() + " BTM"
-	case basedef.HSC_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 18)
-		return fee_new.Div(precision_new).String() + " HOO"
-	case basedef.STARCOIN_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 9)
-		return fee_new.Div(precision_new).String() + " STC"
-	case basedef.KAVA_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 18)
-		return fee_new.Div(precision_new).String() + " KAVA"
-	case basedef.CUBE_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 18)
-		return fee_new.Div(precision_new).String() + " CUBE"
-	case basedef.ZKSYNC_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 18)
-		return fee_new.Div(precision_new).String() + " ETH"
-	case basedef.CELO_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 18)
-		return fee_new.Div(precision_new).String() + " CELO"
-	case basedef.CLOVER_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 18)
-		return fee_new.Div(precision_new).String() + " CLV"
-	case basedef.CONFLUX_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 18)
-		return fee_new.Div(precision_new).String() + " CFX"
-	case basedef.RIPPLE_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 6)
-		return fee_new.Div(precision_new).String() + " XRP"
-	case basedef.ASTAR_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 18)
-		feeString := fee_new.Div(precision_new).String()
-		if basedef.ENV == basedef.TESTNET {
-			return feeString + " SBY"
-		}
-		return feeString + " ASTR"
-	case basedef.APTOS_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 8)
-		return fee_new.Div(precision_new).String() + " APT"
-	case basedef.BRISE_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 18)
-		return fee_new.Div(precision_new).String() + " BRISE"
-	case basedef.DEXIT_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 18)
-		return fee_new.Div(precision_new).String() + " DXT"
-	case basedef.CLOUDTX_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 18)
-		return fee_new.Div(precision_new).String() + " CLD"
-	case basedef.XINFIN_CROSSCHAIN_ID:
-		precision_new := decimal.New(1, 18)
-		return fee_new.Div(precision_new).String() + " XDC"
+
 	default:
 		precision_new := decimal.New(int64(1), 0)
 		return fee_new.Div(precision_new).String()
@@ -330,114 +205,6 @@ func NullToZero(a **BigInt) {
 	if *a == nil {
 		*a = NewBigInt(new(big.Int).SetInt64(0))
 	}
-}
-
-func GetL1BlockNumberOfArbitrumTx(hash string) (uint64, error) {
-	txHash := common.HexToHash(hash)
-	paras := []interface{}{txHash}
-
-	reqPara := &Request{
-		JsonRpc: "2.0",
-		Method:  "eth_getTransactionReceipt",
-		Params:  paras,
-		Id:      1,
-	}
-	reqJson, err := json.Marshal(reqPara)
-	arbitrumConfig := conf.GlobalConfig.GetChainListenConfig(basedef.ARBITRUM_CROSSCHAIN_ID)
-	req, err := http.NewRequest("POST", arbitrumConfig.Nodes[0].Url, strings.NewReader(string(reqJson)))
-	if err != nil {
-		return 0, err
-	}
-	req.Header.Set("Accepts", "application/json")
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return 0, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		return 0, fmt.Errorf("RPC response status code: %d", resp.StatusCode)
-	}
-
-	decoder := json.NewDecoder(resp.Body)
-	rpcRes := new(Response)
-	err = decoder.Decode(&rpcRes)
-	if err != nil {
-		return 0, fmt.Errorf("GetL1BlockNumberOfArbitrumTx, decode rpcRes failed. err: %s", err)
-	}
-
-	receipt := new(TxnReceipt)
-	err = json.Unmarshal(rpcRes.Result, receipt)
-	if err != nil {
-		return 0, fmt.Errorf("GetL1BlockNumberOfArbitrumTx, unmarshal rpcRes.Result err: %s", err)
-	}
-
-	if receipt.L1BlockNumber == nil {
-		return 0, fmt.Errorf("GetL1BlockNumberOfArbitrumTx failed, receipt.L1BlockNumber is nil")
-	}
-	l1BlockNumber := receipt.L1BlockNumber.ToInt().Uint64()
-	return l1BlockNumber, nil
-}
-
-func GetZkSyncL1Height(zkChain, l1Chain *Chain) (height uint64, err error) {
-	var zkChainlistenCfg *conf.ChainListenConfig
-	for _, cfg := range conf.GlobalConfig.ChainListenConfig {
-		if cfg.ChainId == basedef.ZKSYNC_CROSSCHAIN_ID {
-			zkChainlistenCfg = cfg
-		}
-	}
-
-	if len(zkChainlistenCfg.L1Contract) == 0 {
-		log.Info("GetZkSyncL1Height zkSync L1Contract not configured")
-		return
-	}
-
-	var l1Latest uint64
-	var l1Client *ethclient.Client
-
-	if basedef.ENV == basedef.TESTNET {
-		l1Latest, err = ethGetCurrentHeight(zkChainlistenCfg.L1Url)
-		if err != nil {
-			log.Info("GetZkSyncL1Height ethGetCurrentHeight failed", "l1Url", zkChainlistenCfg.L1Url, "error", err)
-			return
-		}
-		l1Client, err = ethclient.Dial(zkChainlistenCfg.L1Url)
-		if err != nil {
-			log.Info("GetZkSyncL1Height create l1 client failed", "l1Url", zkChainlistenCfg.L1Url, "error", err)
-			return
-		}
-	} else {
-		if l1Chain == nil {
-			log.Error("GetZkSyncL1Height l1Chain invalid")
-			return
-		}
-		l1Latest = l1Chain.Height
-
-		sdk := bcommon.GetSdk(basedef.ETHEREUM_CROSSCHAIN_ID)
-		if pro, ok := sdk.(*chainsdk.EthereumSdkPro); ok {
-			l1Client = pro.GetClient()
-		} else {
-			log.Error("GetZkSyncL1Height get l1Chain sdk failed")
-			return
-		}
-	}
-	h := l1Latest - zkChain.BackwardBlockNumber
-
-	l1Getter, err := zk_abi.NewIGetters(common.HexToAddress(zkChainlistenCfg.L1Contract), l1Client)
-	if err != nil {
-		log.Error("GetZkSyncL1Height new zkSync l1 contract getter failed", "error", err)
-		return
-	}
-	n, err := l1Getter.GetTotalBlocksExecuted(&bind.CallOpts{BlockNumber: big.NewInt(int64(h))})
-	if err != nil {
-		log.Error("GetZkSyncL1Height GetTotalBlocksExecuted failed", "error", err)
-		return
-	}
-	height = uint64(n)
-	log.Info("ZkSyncL1Height %d", height)
-	return
 }
 
 func FormatString(data string) string {
@@ -472,112 +239,19 @@ func GetTokenType(chainId uint64, standard uint8) string {
 		tokenType = "20"
 	}
 	switch chainId {
-	case basedef.ETHEREUM_CROSSCHAIN_ID, basedef.SWITCHEO_CROSSCHAIN_ID, basedef.PLT_CROSSCHAIN_ID, basedef.ZILLIQA_CROSSCHAIN_ID,
-		basedef.MATIC_CROSSCHAIN_ID, basedef.ARBITRUM_CROSSCHAIN_ID, basedef.XDAI_CROSSCHAIN_ID, basedef.AVAX_CROSSCHAIN_ID, basedef.FANTOM_CROSSCHAIN_ID,
-		basedef.OPTIMISTIC_CROSSCHAIN_ID, basedef.METIS_CROSSCHAIN_ID, basedef.BOBA_CROSSCHAIN_ID, basedef.RINKEBY_CROSSCHAIN_ID, basedef.OASIS_CROSSCHAIN_ID:
+	case basedef.ETHEREUM_CROSSCHAIN_ID:
 		return "ERC" + "-" + tokenType
-	case basedef.ONT_CROSSCHAIN_ID:
-		if standard == TokenTypeErc721 {
-			return "NFT"
-		}
-		return "OEP-4"
-	case basedef.NEO_CROSSCHAIN_ID:
-		if standard == TokenTypeErc721 {
-			return "NFT"
-		}
-		return "NEP-4"
+
 	case basedef.BSC_CROSSCHAIN_ID:
 		return "BEP" + "-" + tokenType
-	case basedef.HECO_CROSSCHAIN_ID:
-		return "HRC" + "-" + tokenType
-	case basedef.OK_CROSSCHAIN_ID:
-		return "KIP" + "-" + tokenType
+
 	case basedef.NEO3_CROSSCHAIN_ID:
 		if standard == TokenTypeErc721 {
 			return "NFT"
 		}
-		return "NEP-17"
-	case basedef.HARMONY_CROSSCHAIN_ID:
-		return "HRC" + "-" + tokenType
-	case basedef.KCC_CROSSCHAIN_ID:
-		return "KRC" + "-" + tokenType
-	case basedef.BYTOM_CROSSCHAIN_ID:
-		return "BAP" + "-" + tokenType
-	case basedef.HSC_CROSSCHAIN_ID:
-		return "ORC" + "-" + tokenType
-	case basedef.KAVA_CROSSCHAIN_ID:
-		return "ERC" + "-" + tokenType
-	case basedef.CUBE_CROSSCHAIN_ID:
-		return "CRC" + "-" + tokenType
-	case basedef.STARCOIN_CROSSCHAIN_ID:
-		if standard == TokenTypeErc721 {
-			return "Starcoin NFT"
-		}
-		return "Starcoin Token"
-	case basedef.RIPPLE_CROSSCHAIN_ID:
-		if standard == TokenTypeErc721 {
-			return "Ripple NFT"
-		}
-		return "XRP"
-	case basedef.APTOS_CROSSCHAIN_ID:
-		if standard == TokenTypeErc721 {
-			return "NFT"
-		}
-		return "Coin"
+		return "NEP17"
 
 	default:
 		return "ERC" + "-" + tokenType
 	}
-}
-
-type heightReq struct {
-	JSONRPC string   `json:"jsonrpc"`
-	Method  string   `json:"method"`
-	Params  []string `json:"params"`
-	ID      uint     `json:"id"`
-}
-
-type heightRep struct {
-	JSONRPC string `json:"jsonrpc"`
-	Result  string `json:"result"`
-	ID      uint   `json:"id"`
-}
-
-func ethGetCurrentHeight(url string) (height uint64, err error) {
-	req := &heightReq{
-		JSONRPC: "2.0",
-		Method:  "eth_blockNumber",
-		Params:  make([]string, 0),
-		ID:      1,
-	}
-	data, _ := json.Marshal(req)
-
-	body, err := jsonRequest(url, data)
-	if err != nil {
-		return
-	}
-
-	var resp heightRep
-	err = json.Unmarshal(body, &resp)
-	if err != nil {
-		return
-	}
-
-	height, err = strconv.ParseUint(resp.Result, 0, 64)
-	if err != nil {
-		return
-	}
-
-	return
-}
-
-func jsonRequest(url string, data []byte) (result []byte, err error) {
-	resp, err := http.Post(url, "application/json", strings.NewReader(string(data)))
-	if err != nil {
-		return
-	}
-
-	defer resp.Body.Close()
-
-	return ioutil.ReadAll(resp.Body)
 }

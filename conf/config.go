@@ -41,7 +41,7 @@ var (
 	}
 )
 
-//getFlagName deal with short flag, and return the flag name whether flag name have short name
+// getFlagName deal with short flag, and return the flag name whether flag name have short name
 func GetFlagName(flag cli.Flag) string {
 	return strings.TrimSpace(strings.Split(flag.GetName(), ",")[0])
 }
@@ -389,64 +389,6 @@ func NewConfig(filePath string) *Config {
 	//initEstimateProxy()
 	//initEstimateFeeMin()
 	return config
-}
-
-func initPolyProxy() {
-	if len(PolyProxy) > 0 {
-		return
-	}
-	PolyProxy = make(map[string]bool, 0)
-	proxyConfigs := GlobalConfig.ChainListenConfig
-	for _, v := range proxyConfigs {
-		//some chain only listen,don't need our relayer cross
-		if v.ChainId == basedef.SWITCHEO_CROSSCHAIN_ID || v.ChainId == basedef.ZILLIQA_CROSSCHAIN_ID {
-			continue
-		}
-		for _, proxy := range v.ProxyContract {
-			PolyProxy[strings.ToUpper(proxy)] = true
-			PolyProxy[strings.ToUpper(basedef.HexStringReverse(proxy))] = true
-		}
-		PolyProxy[strings.ToUpper(v.SwapContract)] = true
-		PolyProxy[strings.ToUpper(basedef.HexStringReverse(v.SwapContract))] = true
-		for _, contract := range v.NFTProxyContract {
-			PolyProxy[strings.ToUpper(contract)] = true
-		}
-		for _, contract := range v.NFTProxyContract {
-			PolyProxy[strings.ToUpper(basedef.HexStringReverse(contract))] = true
-		}
-	}
-	if len(PolyProxy) == 0 {
-		panic("init PolyProxy err,polyProxy is nil")
-	}
-	PolyProxy[""] = true
-	logs.Info("init polyProxy:", PolyProxy)
-}
-
-func initEstimateProxy() {
-	EstimateProxy = make(map[string]bool, 0)
-	proxyConfigs := GlobalConfig.ChainListenConfig
-	for _, v := range proxyConfigs {
-		//some chain only listen,don't need our relayer cross
-		if v.ChainId == basedef.SWITCHEO_CROSSCHAIN_ID || v.ChainId == basedef.ZILLIQA_CROSSCHAIN_ID {
-			continue
-		}
-		for _, proxy := range v.OtherProxyContract {
-			if proxy.ItemName == "O3V2" {
-				EstimateProxy[strings.ToUpper(proxy.ItemProxy)] = true
-				EstimateProxy[strings.ToUpper(basedef.HexStringReverse(proxy.ItemProxy))] = true
-			}
-		}
-	}
-	logs.Info("init EstimateProxy:", EstimateProxy)
-}
-
-func initEstimateFeeMin() {
-	EstimateFeeMin = make(map[uint64]int64, 0)
-	feeListenConfig := GlobalConfig.FeeListenConfig
-	for _, v := range feeListenConfig {
-		EstimateFeeMin[v.ChainId] = v.MinFee
-	}
-	logs.Info("init EstimateFeeMin:", EstimateFeeMin)
 }
 
 type NftConfig struct {

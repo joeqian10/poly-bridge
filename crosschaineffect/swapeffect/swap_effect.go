@@ -19,10 +19,11 @@ package swapeffect
 
 import (
 	"encoding/json"
+	"time"
+
 	"poly-bridge/basedef"
 	"poly-bridge/conf"
 	"poly-bridge/models"
-	"time"
 
 	"github.com/beego/beego/v2/core/logs"
 	"gorm.io/driver/mysql"
@@ -109,16 +110,6 @@ func (eff *SwapEffect) updateHash() error {
 }
 
 func (eff *SwapEffect) checkStatus() error {
-	{
-		wrapperTransactions := make([]*models.WrapperTransaction, 0)
-		now := time.Now().Unix() - eff.cfg.HowOld2
-		eff.db.Model(models.WrapperTransaction{}).Where("(status != ? and time < ?) and ((src_chain_id = ? and dst_chain_id = ?) or (src_chain_id = ? and dst_chain_id = ?))",
-			basedef.STATE_FINISHED, now, basedef.BSC_CROSSCHAIN_ID, basedef.HECO_CROSSCHAIN_ID, basedef.HECO_CROSSCHAIN_ID, basedef.BSC_CROSSCHAIN_ID).Find(&wrapperTransactions)
-		if len(wrapperTransactions) > 0 {
-			wrapperTransactionsJson, _ := json.Marshal(wrapperTransactions)
-			logs.Error("There is unfinished transactions(%d) %s", now, string(wrapperTransactionsJson))
-		}
-	}
 	{
 		wrapperTransactions := make([]*models.WrapperTransaction, 0)
 		now := time.Now().Unix() - eff.cfg.HowOld

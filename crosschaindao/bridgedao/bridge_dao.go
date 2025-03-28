@@ -20,19 +20,21 @@ package bridgedao
 import (
 	"errors"
 	"fmt"
+	"math/big"
+	"strings"
+	"time"
+
 	"github.com/beego/beego/v2/core/logs"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"math/big"
+
 	"poly-bridge/basedef"
 	"poly-bridge/conf"
 	serverconf "poly-bridge/conf"
 	"poly-bridge/models"
 	"poly-bridge/utils/decimal"
 	"poly-bridge/utils/fee"
-	"strings"
-	"time"
 )
 
 type BridgeDao struct {
@@ -606,8 +608,6 @@ func (dao *BridgeDao) FilterMissingWrapperTransactions() ([]*models.SrcTransacti
 	srcTransactions := make([]*models.SrcTransaction, 0)
 	startTime := time.Now().Add(-time.Hour * 24).Unix()
 	endTime := time.Now().Add(-time.Hour).Unix()
-	ignoreSrcChainIds := []uint64{basedef.O3_CROSSCHAIN_ID, basedef.SWITCHEO_CROSSCHAIN_ID}
-	ignoreDstChainIds := []uint64{basedef.SWITCHEO_CROSSCHAIN_ID}
 
 	var polyProxies []string
 	for k, _ := range conf.PolyProxy {
@@ -615,7 +615,6 @@ func (dao *BridgeDao) FilterMissingWrapperTransactions() ([]*models.SrcTransacti
 	}
 
 	res := dao.db.Debug().Where("time > ? and time < ?", startTime, endTime).
-		Where("chain_id not in ? and dst_chain_id not in ?", ignoreSrcChainIds, ignoreDstChainIds).
 		Where("(select count(1) from wrapper_transactions where src_transactions.hash=wrapper_transactions.hash) = 0").
 		Where("UPPER(contract) in ?", polyProxies).
 		Find(&srcTransactions)
@@ -672,23 +671,6 @@ func (dao *BridgeDao) WrapperTransactionCheckFee(wrapperTransactions []*models.W
 		}
 		//money paid in wrapper
 		feePay, feeMin, gasPay := fee.CheckFeeCal(chainFee, token, v.FeeAmount)
-		// get optimistic L1 fee on ethereum
-		if chainFee.ChainId == basedef.OPTIMISTIC_CROSSCHAIN_ID {
-			ethChainFee, ok := chain2Fees[basedef.ETHEREUM_CROSSCHAIN_ID]
-			if !ok {
-				v.IsPaid = false
-				logs.Info("check fee wrapper_hash %s NOT_PAID,chainFee hasn't ethereum fee", v.Hash)
-				continue
-			}
-
-			L1MinFee, _, _, err := fee.GetL1Fee(ethChainFee, chainFee.ChainId)
-			if err != nil {
-				v.IsPaid = false
-				logs.Info("check fee wrapper_hash %s NOT_PAID, get L1 fee failed. err=%v", v.Hash, err)
-				continue
-			}
-			feeMin = new(big.Float).Add(feeMin, L1MinFee)
-		}
 
 		if _, in := conf.EstimateProxy[strings.ToUpper(curSrcTransaction.Contract)]; in {
 			//is estimateGas proxy
@@ -838,18 +820,6 @@ func (dao *BridgeDao) FillTxSpecialChain(wrapperTransactions []*models.WrapperTr
 	}
 	rippleWDs := make([]*models.WrapperDetail, 0)
 	rippleDsttxs := make([]*models.DstTransaction, 0)
-	for _, v := range wrapperDetails {
-		switch v.SrcChainId {
-		case basedef.RIPPLE_CROSSCHAIN_ID:
-			rippleWDs = append(rippleWDs, v)
-		}
-	}
-	for _, v := range dstTransactions {
-		switch v.ChainId {
-		case basedef.RIPPLE_CROSSCHAIN_ID:
-			rippleDsttxs = append(rippleDsttxs, v)
-		}
-	}
 	return dao.fillTxRipple(dstTransactions, rippleWDs, rippleDsttxs)
 }
 
@@ -903,26 +873,6 @@ func (dao *BridgeDao) fillTxRipple(dstTransactions []*models.DstTransaction, rip
 				})
 			}
 		}
-	}
-
-	if len(rippleDsttxs) > 0 {
-		sequences := make([]uint64, 0)
-		for _, v := range rippleDsttxs {
-			sequences = append(sequences, v.Sequence)
-		}
-		polyTxs := make([]*models.PolyTransaction, 0)
-		dao.db.Where("dst_chain_id = ? and dst_sequence in ? ", basedef.RIPPLE_CROSSCHAIN_ID, sequences).Find(&polyTxs)
-		sequencePolyHash := make(map[uint64]*models.PolyTransaction, 0)
-		for _, v := range polyTxs {
-			sequencePolyHash[v.DstSequence] = v
-		}
-		for _, v := range dstTransactions {
-			if v.ChainId == basedef.RIPPLE_CROSSCHAIN_ID && sequencePolyHash[v.Sequence] != nil {
-				v.PolyHash = sequencePolyHash[v.Sequence].Hash
-				v.SrcChainId = sequencePolyHash[v.Sequence].SrcChainId
-			}
-		}
-
 	}
 	return
 }

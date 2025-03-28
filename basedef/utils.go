@@ -20,19 +20,15 @@ package basedef
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/Zilliqa/gozilliqa-sdk/bech32"
 	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
 
 	"github.com/beego/beego/v2/core/logs"
-	cosmos_types "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/joeqian10/neo-gogogo/helper"
 	"github.com/joeqian10/neo3-gogogo/crypto"
-	neo3_helper "github.com/joeqian10/neo3-gogogo/helper"
-	ontcommon "github.com/ontio/ontology/common"
+	"github.com/joeqian10/neo3-gogogo/helper"
 )
 
 func ReadFile(fileName string) ([]byte, error) {
@@ -57,88 +53,17 @@ func Hash2Address(chainId uint64, value string) string {
 	if chainId == ETHEREUM_CROSSCHAIN_ID {
 		addr := common.HexToAddress(value)
 		return strings.ToLower(addr.String()[2:])
-	} else if chainId == NEO_CROSSCHAIN_ID {
-		addrHex, _ := hex.DecodeString(value)
-		addr, _ := helper.UInt160FromBytes(addrHex)
-		return helper.ScriptHashToAddress(addr)
 	} else if chainId == BSC_CROSSCHAIN_ID {
 		addr := common.HexToAddress(value)
 		return strings.ToLower(addr.String()[2:])
-	} else if chainId == HECO_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:])
-	} else if chainId == ONT_CROSSCHAIN_ID {
-		value = HexStringReverse(value)
-		addr, _ := ontcommon.AddressFromHexString(value)
-		return addr.ToBase58()
 	} else if chainId == ONTEVM_CROSSCHAIN_ID {
 		addr := common.HexToAddress(value)
 		return strings.ToLower(addr.String()[2:])
-	} else if chainId == OK_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:])
-	} else if chainId == SWITCHEO_CROSSCHAIN_ID {
-		addr, _ := cosmos_types.AccAddressFromHex(value)
-		return addr.String()
 	} else if chainId == NEO3_CROSSCHAIN_ID {
 		addrHex, _ := hex.DecodeString(value)
-		addr := neo3_helper.UInt160FromBytes(addrHex)
-		address := crypto.ScriptHashToAddress(addr, neo3_helper.DefaultAddressVersion)
+		addr := helper.UInt160FromBytes(addrHex)
+		address := crypto.ScriptHashToAddress(addr, helper.DefaultAddressVersion)
 		return address
-	} else if chainId == BTC_CROSSCHAIN_ID {
-		addrHex, _ := hex.DecodeString(value)
-		return string(addrHex)
-	} else if chainId == ARBITRUM_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:])
-	} else if chainId == XDAI_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:])
-	} else if chainId == ZILLIQA_CROSSCHAIN_ID {
-		addr, err := bech32.ToBech32Address(value)
-		if err == nil {
-			return addr
-		}
-		return value
-	} else if chainId == OASIS_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:])
-	} else if chainId == BYTOM_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:])
-	} else if chainId == HSC_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:])
-	} else if chainId == HARMONY_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:])
-	} else if chainId == KCC_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:])
-	} else if chainId == KAVA_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:])
-	} else if chainId == CUBE_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:])
-	} else if chainId == CONFLUX_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:])
-	} else if chainId == ASTAR_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:])
-	} else if chainId == BRISE_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:])
-	} else if chainId == DEXIT_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:])
-	} else if chainId == CLOUDTX_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:])
-	} else if chainId == XINFIN_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:])
 	}
 	return value
 }
@@ -178,110 +103,27 @@ func Address2Hash(chainId uint64, value string) (string, error) {
 	if chainId == ETHEREUM_CROSSCHAIN_ID {
 		addr := common.HexToAddress(value)
 		return strings.ToLower(addr.String()[2:]), nil
-	} else if chainId == NEO_CROSSCHAIN_ID {
-		scripHash, err := helper.AddressToScriptHash(value)
-		if err != nil {
-			return value, err
-		}
-		addrBytes := scripHash.Bytes()
-		addrHex := hex.EncodeToString(addrBytes)
-		return addrHex, nil
 	} else if chainId == BSC_CROSSCHAIN_ID {
 		addr := common.HexToAddress(value)
 		return strings.ToLower(addr.String()[2:]), nil
-	} else if chainId == HECO_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:]), nil
-	} else if chainId == ONT_CROSSCHAIN_ID {
-		addr, err := ontcommon.AddressFromBase58(value)
-		if err != nil {
-			return value, err
-		}
-		addrHex := addr.ToHexString()
-		return HexStringReverse(addrHex), nil
 	} else if chainId == ONTEVM_CROSSCHAIN_ID {
 		addr := common.HexToAddress(value)
 		return strings.ToLower(addr.String()[2:]), nil
-	} else if chainId == SWITCHEO_CROSSCHAIN_ID {
-		//cosmos_types.
-		addr, err := cosmos_types.AccAddressFromBech32(value)
-		if err != nil {
-			return value, err
-		}
-		hash := fmt.Sprint(addr)
-		return hash, nil
 	} else if chainId == NEO3_CROSSCHAIN_ID {
-		scriptHash, err := crypto.AddressToScriptHash(value, neo3_helper.DefaultAddressVersion)
+		scriptHash, err := crypto.AddressToScriptHash(value, helper.DefaultAddressVersion)
 		if err != nil {
 			return value, err
 		}
 		addrBytes := scriptHash.ToByteArray()
 		address := hex.EncodeToString(addrBytes)
 		return address, nil
-	} else if chainId == ARBITRUM_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:]), nil
-	} else if chainId == XDAI_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:]), nil
-	} else if chainId == ZILLIQA_CROSSCHAIN_ID {
-		addr, err := bech32.FromBech32Addr(value)
-		return addr, err
-	} else if chainId == OASIS_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:]), nil
-	} else if chainId == BYTOM_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:]), nil
-	} else if chainId == HSC_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:]), nil
-	} else if chainId == HARMONY_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:]), nil
-	} else if chainId == KCC_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:]), nil
-	} else if chainId == KAVA_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:]), nil
-	} else if chainId == CUBE_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:]), nil
-	} else if chainId == ZKSYNC_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:]), nil
-	} else if chainId == CELO_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:]), nil
-	} else if chainId == CLOVER_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:]), nil
-	} else if chainId == CONFLUX_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:]), nil
-	} else if chainId == ASTAR_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:]), nil
-	} else if chainId == BRISE_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:]), nil
-	} else if chainId == DEXIT_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:]), nil
-	} else if chainId == CLOUDTX_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:]), nil
-	} else if chainId == XINFIN_CROSSCHAIN_ID {
-		addr := common.HexToAddress(value)
-		return strings.ToLower(addr.String()[2:]), nil
 	}
 	return value, nil
 }
 
-//lock item_proxy use
+// lock item_proxy use
 func Proxy2Address(chainId uint64, proxy string) string {
-	if chainId == NEO_CROSSCHAIN_ID || chainId == ONT_CROSSCHAIN_ID || chainId == NEO3_CROSSCHAIN_ID {
+	if chainId == NEO3_CROSSCHAIN_ID {
 		proxy = HexStringReverse(proxy)
 	}
 	return Hash2Address(chainId, proxy)
@@ -301,82 +143,12 @@ func GetChainName(id uint64) string {
 		return "Poly"
 	case ETHEREUM_CROSSCHAIN_ID:
 		return "Ethereum"
-	case ONT_CROSSCHAIN_ID:
-		return "Ontology"
-	case NEO_CROSSCHAIN_ID:
-		return "Neo"
 	case BSC_CROSSCHAIN_ID:
 		return "Bsc"
-	case HECO_CROSSCHAIN_ID:
-		return "Heco"
-	case O3_CROSSCHAIN_ID:
-		return "O3"
-	case OK_CROSSCHAIN_ID:
-		return "OK"
-	case MATIC_CROSSCHAIN_ID:
-		return "Polygon"
-	case ARBITRUM_CROSSCHAIN_ID:
-		return "Arbitrum"
-	case XDAI_CROSSCHAIN_ID:
-		return "XDai"
-	case BTC_CROSSCHAIN_ID:
-		return "BTC"
 	case NEO3_CROSSCHAIN_ID:
 		return "Neo3"
-	case PLT_CROSSCHAIN_ID:
-		return "PLT"
-	case AVAX_CROSSCHAIN_ID:
-		return "AVAX"
-	case FANTOM_CROSSCHAIN_ID:
-		return "FANTOM"
-	case OPTIMISTIC_CROSSCHAIN_ID:
-		return "OPTIMISTIC"
-	case METIS_CROSSCHAIN_ID:
-		return "METIS"
-	case BOBA_CROSSCHAIN_ID:
-		return "BOBA"
-	case OASIS_CROSSCHAIN_ID:
-		return "OASIS"
-	case HARMONY_CROSSCHAIN_ID:
-		return "Harmony"
-	case KCC_CROSSCHAIN_ID:
-		return "KCC"
-	case BYTOM_CROSSCHAIN_ID:
-		return "BYTOM"
-	case HSC_CROSSCHAIN_ID:
-		return "HSC"
-	case STARCOIN_CROSSCHAIN_ID:
-		return "Starcoin"
-	case KAVA_CROSSCHAIN_ID:
-		return "KAVA"
-	case CUBE_CROSSCHAIN_ID:
-		return "CUBE"
-	case ZKSYNC_CROSSCHAIN_ID:
-		return "zkSync"
-	case CELO_CROSSCHAIN_ID:
-		return "Celo"
-	case CLOVER_CROSSCHAIN_ID:
-		return "CLV P-Chain"
-	case CONFLUX_CROSSCHAIN_ID:
-		return "Conflux eSpace"
-	case RIPPLE_CROSSCHAIN_ID:
-		return "Ripple"
-	case ASTAR_CROSSCHAIN_ID:
-		return "Astar"
-	case APTOS_CROSSCHAIN_ID:
-		return "Aptos"
-	case BRISE_CROSSCHAIN_ID:
-		return "Bitgert"
-	case DEXIT_CROSSCHAIN_ID:
-		return "Dexit"
-	case CLOUDTX_CROSSCHAIN_ID:
-		return "CloudTx"
-	case XINFIN_CROSSCHAIN_ID:
-		return "XinFin"
 	case ONTEVM_CROSSCHAIN_ID:
-		return "Ontology evm"
-	case BFC_CROSSCHAIN_ID:
-		return "Benfen"
+		return "OntEVM"
 	default:
 		return fmt.Sprintf("Unknown(%d)", id)
 	}
@@ -384,13 +156,8 @@ func GetChainName(id uint64) string {
 
 func FormatAddr(chain uint64, addr string) string {
 	switch chain {
-	case ONT_CROSSCHAIN_ID, SWITCHEO_CROSSCHAIN_ID, ZILLIQA_CROSSCHAIN_ID, NEO_CROSSCHAIN_ID, NEO3_CROSSCHAIN_ID, RIPPLE_CROSSCHAIN_ID, BFC_CROSSCHAIN_ID:
+	case NEO3_CROSSCHAIN_ID:
 		return addr
-	case STARCOIN_CROSSCHAIN_ID, APTOS_CROSSCHAIN_ID:
-		if Has0xPrefix(addr) {
-			addr = addr[2:]
-		}
-		return "0x" + addr
 	default:
 		return common.HexToAddress(addr).String()
 	}
@@ -398,10 +165,6 @@ func FormatAddr(chain uint64, addr string) string {
 
 func FormatTxHash(chain uint64, hash string) string {
 	switch chain {
-	case ONT_CROSSCHAIN_ID, RIPPLE_CROSSCHAIN_ID, BFC_CROSSCHAIN_ID:
-		return hash
-	case SWITCHEO_CROSSCHAIN_ID:
-		return strings.ToUpper(hash)
 	default:
 		return common.HexToHash(hash).String()
 	}

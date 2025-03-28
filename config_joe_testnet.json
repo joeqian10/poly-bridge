@@ -1,0 +1,176 @@
+{
+  "Server": "polybridge",
+  "Backup": false,
+  "Env": "testnet",
+  "LogFile": "logs/bridge.log",
+  "RunMode": "prod",
+  "DBConfig": {
+    "Debug": true,
+    "URL": "10.213.0.3:3306",
+    "Scheme": "poly",
+    "User": "root",
+    "Password": "PW9eXGswZSD6fBKE"
+  },
+  "HttpConfig": {
+    "Address": "0.0.0.0",
+    "Port": 8090
+  },
+  "RedisConfig": {
+    "addr": "localhost:6379",
+    "password": "",
+    "proto": "tcp",
+    "pool_size": 50,
+    "min_idle_conns": 10,
+    "dial_timeout": 2,
+    "read_timeout": 2,
+    "write_timeout": 2,
+    "idle_timeout": 10,
+    "expiration": 600
+  },
+  "ChainNodes": [
+    {
+      "ChainName": "Poly",
+      "ChainId": 0,
+      "Nodes": [
+        {
+          "Url": "http://34.172.201.98:20336"
+        }
+      ],
+      "ExtendNodes": []
+    },
+    {
+      "ChainName": "Ethereum",
+      "ChainId": 602,
+      "Nodes": [
+        {
+          "Url": "https://sepolia.infura.io/v3/c9502ec18fa143c18d5da66eba348723"
+        },
+        {
+          "Url": "https://sepolia.infura.io/v3/e97c760ebd6d4b4e8cc2ee1395512b1e"
+        }
+      ],
+      "ExtendNodes": []
+    },
+    {
+      "ChainName": "Bsc",
+      "ChainId": 79,
+      "Nodes": [
+        {
+          "Url": "https://bsc-testnet.infura.io/v3/c9502ec18fa143c18d5da66eba348723"
+        },
+        {
+          "Url": "https://bsc-testnet.infura.io/v3/e97c760ebd6d4b4e8cc2ee1395512b1e"
+        }
+      ],
+      "ExtendNodes": []
+    },
+    {
+      "ChainName": "Neo3",
+      "ChainId": 888,
+      "Nodes": [
+        {
+          "Url": "http://seed1t5.neo.org:20332"
+        },
+        {
+          "Url": "http://seed2t5.neo.org:20332"
+        },
+        {
+          "Url": "http://seed3t5.neo.org:20332"
+        }
+      ],
+      "ExtendNodes": []
+    },
+    {
+      "ChainName": "OntEVM",
+      "ChainId": 334,
+      "Nodes": [
+        {
+          "Url": "https://polaris1.ont.io:10339"
+        }
+      ],
+      "ExtendNodes": []
+    }
+  ],
+  "ChainListenConfig": [
+    {
+      "ChainName": "Poly",
+      "ChainId": 0,
+      "ListenSlot": 1,
+      "Defer": 1,
+      "BatchSize": 5,
+      "CCMContract": "0300000000000000000000000000000000000000"
+    },
+    {
+      "ChainName": "Ethereum",
+      "ChainId": 602,
+      "ListenSlot": 5,
+      "Defer": 1,
+      "BatchSize": 5,
+      "WrapperContract": [],
+      "CCMContract": "74b0161fd259476b6cdf3604e9ca0dd70c733097",
+      "ProxyContract": [
+        "205974a8d9954426d717dcf4b00ca5c0345c2bf1"
+      ]
+    },
+    {
+      "ChainName": "Bsc",
+      "ChainId": 79,
+      "ListenSlot": 1,
+      "Defer": 1,
+      "BatchSize": 5,
+      "WrapperContract": [],
+      "CCMContract": "a991916b79f376316f6a11efe26eec162e2aeda4",
+      "ProxyContract": [
+        "7870178ea59be62d053fdbcf65c69c772c5629bb"
+      ]
+    },
+    {
+      "ChainName": "Neo3",
+      "ChainId": 888,
+      "ListenSlot": 1,
+      "Defer": 1,
+      "BatchSize": 5,
+      "WrapperContract": [],
+      "CCMContract": "b551fcb82f70b7fa6ce98dc25d7ff8606d61f8dc",
+      "ProxyContract": [
+        "216780323637732da05684514b9c4e24c27f5d69"
+      ]
+    },
+    {
+      "ChainName": "OntEVM",
+      "ChainId": 334,
+      "ListenSlot": 1,
+      "Defer": 1,
+      "BatchSize": 5,
+      "WrapperContract": [],
+      "CCMContract": "64EdF25D90Bf8C352a3Bcd6bCB3c74f6e0671a15",
+      "ProxyContract": [
+        "5f8251d59bF5173C4085Ed454bf7488B87c8AE85"
+      ]
+    }
+  ],
+  "StatsConfig": {
+    "AssetAdressInterval": 1200,
+    "AssetStatisticInterval": 600,
+    "ChainAddressCheckInterval": 1200,
+    "ChainStatisticInterval": 600,
+    "TokenAmountCheckInterval": 300,
+    "TokenBasicStatsInterval": 600,
+    "TokenStatisticInterval": 600,
+    "LockTokenStatisticInterval": 300
+  },
+  "EventEffectConfig": {
+    "HowOld": 3600,
+    "HowOld2": 3600,
+    "ChainListening": 300,
+    "EffectSlot": 1,
+    "TimeStatisticSlot": 3600
+  },
+  "CoinPriceUpdateSlot": 5,
+  "CoinPriceListenConfig": [],
+  "FeeUpdateSlot": 5,
+  "FeeListenConfig": [],
+  "LargeTxAmount" : 10,
+  "BotConfig": {},
+  "NftConfig":{}
+}

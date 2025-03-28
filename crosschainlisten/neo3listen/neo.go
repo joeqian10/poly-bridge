@@ -24,6 +24,7 @@ import (
 	"math/big"
 
 	neo3_models "github.com/joeqian10/neo3-gogogo/rpc/models"
+
 	"poly-bridge/basedef"
 	"poly-bridge/chainsdk"
 	"poly-bridge/conf"
@@ -248,12 +249,6 @@ func (this *Neo3ChainListen) HandleNewBlock(height uint64) ([]*models.WrapperTra
 								fctransfer.DstUser = hex.EncodeToString(dstUser.Value.([]byte))
 								fctransfer.DstAsset = hex.EncodeToString(dstAsset.Value.([]byte))
 
-								if fctransfer.DstChainId == basedef.APTOS_CROSSCHAIN_ID {
-									aptosAsset, err := hex.DecodeString(fctransfer.DstAsset)
-									if err == nil {
-										fctransfer.DstAsset = string(aptosAsset)
-									}
-								}
 								fctransfer.DstAsset = models.FormatAssert(fctransfer.DstAsset)
 								break
 							}

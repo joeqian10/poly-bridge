@@ -3,13 +3,16 @@ package ontevmlisten
 import (
 	"encoding/hex"
 	"fmt"
+	"math/big"
+	"strings"
+
 	"github.com/beego/beego/v2/core/logs"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ontcommon "github.com/ontio/ontology-go-sdk/common"
 	polycommon "github.com/polynetwork/poly/common"
-	"math/big"
+
 	"poly-bridge/basedef"
 	"poly-bridge/chainsdk"
 	"poly-bridge/conf"
@@ -17,7 +20,6 @@ import (
 	"poly-bridge/go_abi/lock_proxy_abi"
 	"poly-bridge/go_abi/wrapper_abi"
 	"poly-bridge/models"
-	"strings"
 )
 
 const (

@@ -18,13 +18,13 @@
 package bridgeeffect
 
 import (
-	"encoding/json"
 	"fmt"
+	"time"
+
 	"poly-bridge/basedef"
 	"poly-bridge/cacheRedis"
 	"poly-bridge/conf"
 	"poly-bridge/models"
-	"time"
 
 	"github.com/beego/beego/v2/core/logs"
 	"gorm.io/driver/mysql"
@@ -168,61 +168,41 @@ func (eff *BridgeEffect) updateHash() error {
 }
 
 func (eff *BridgeEffect) updateDstHash() error {
-	batch := 500
-	index := 0
+	//batch := 500
+	//index := 0
 
-	for {
-		dstPolyRelations := make([]*models.DstPolyRelation, 0)
-		eff.db.Table("dst_transactions").
-			Where("dst_transactions.poly_hash = '' and dst_transactions.chain_id = ? and dst_transactions.sequence > 0", basedef.RIPPLE_CROSSCHAIN_ID).
-			Select("dst_transactions.hash as dst_hash, poly_transactions.hash as poly_hash").
-			Joins("inner join poly_transactions on dst_transactions.sequence = poly_transactions.dst_sequence and poly_transactions.dst_chain_id = dst_transactions.chain_id").
-			Preload("PolyTransaction").
-			Preload("DstTransaction").
-			Limit(batch).
-			Offset(batch * index).
-			Order("poly_transactions.id").
-			Find(&dstPolyRelations)
-		updateDstTransactions := make([]*models.DstTransaction, 0)
-		for _, dstPolyRelation := range dstPolyRelations {
-			if dstPolyRelation.PolyTransaction != nil && dstPolyRelation.DstTransaction != nil {
-				dstPolyRelation.DstTransaction.PolyHash = dstPolyRelation.PolyTransaction.Hash
-				updateDstTransactions = append(updateDstTransactions, dstPolyRelation.DstTransaction)
-			}
-		}
-		if len(updateDstTransactions) > 0 {
-			logs.Info("updateHash now min DstTransaction.id", updateDstTransactions[0].Id)
-			eff.db.Save(updateDstTransactions)
-			index++
-		} else {
-			break
-		}
-	}
-	logs.Info("Update DstHash finished with at most %d * 500 checked", index+1)
+	//for {
+	//	dstPolyRelations := make([]*models.DstPolyRelation, 0)
+	//	eff.db.Table("dst_transactions").
+	//		Where("dst_transactions.poly_hash = '' and dst_transactions.chain_id = ? and dst_transactions.sequence > 0", basedef.RIPPLE_CROSSCHAIN_ID).
+	//		Select("dst_transactions.hash as dst_hash, poly_transactions.hash as poly_hash").
+	//		Joins("inner join poly_transactions on dst_transactions.sequence = poly_transactions.dst_sequence and poly_transactions.dst_chain_id = dst_transactions.chain_id").
+	//		Preload("PolyTransaction").
+	//		Preload("DstTransaction").
+	//		Limit(batch).
+	//		Offset(batch * index).
+	//		Order("poly_transactions.id").
+	//		Find(&dstPolyRelations)
+	//	updateDstTransactions := make([]*models.DstTransaction, 0)
+	//	for _, dstPolyRelation := range dstPolyRelations {
+	//		if dstPolyRelation.PolyTransaction != nil && dstPolyRelation.DstTransaction != nil {
+	//			dstPolyRelation.DstTransaction.PolyHash = dstPolyRelation.PolyTransaction.Hash
+	//			updateDstTransactions = append(updateDstTransactions, dstPolyRelation.DstTransaction)
+	//		}
+	//	}
+	//	if len(updateDstTransactions) > 0 {
+	//		logs.Info("updateHash now min DstTransaction.id", updateDstTransactions[0].Id)
+	//		eff.db.Save(updateDstTransactions)
+	//		index++
+	//	} else {
+	//		break
+	//	}
+	//}
+	//logs.Info("Update DstHash finished with at most %d * 500 checked", index+1)
 	return nil
 }
 
 func (eff *BridgeEffect) checkStatus() error {
-	{
-		wrapperTransactions := make([]*models.WrapperTransaction, 0)
-		now := time.Now().Unix() - eff.cfg.HowOld2
-		eff.db.Model(models.WrapperTransaction{}).Where("(status NOT IN ? and time < ?) and ((src_chain_id = ? and dst_chain_id = ?) or (src_chain_id = ? and dst_chain_id = ?))",
-			[]int{basedef.STATE_FINISHED, basedef.STATE_WAIT, basedef.STATE_SKIP},
-			now, basedef.BSC_CROSSCHAIN_ID, basedef.HECO_CROSSCHAIN_ID, basedef.HECO_CROSSCHAIN_ID, basedef.BSC_CROSSCHAIN_ID).Find(&wrapperTransactions)
-		if len(wrapperTransactions) > 0 {
-			wrapperTransactionsJson, _ := json.Marshal(wrapperTransactions)
-			logs.Error("There is unfinished transactions(%d) %s", now, string(wrapperTransactionsJson))
-		}
-	}
-	{
-		wrapperTransactions := make([]*models.WrapperTransaction, 0)
-		now := time.Now().Unix() - eff.cfg.HowOld
-		eff.db.Model(models.WrapperTransaction{}).Where("status != ? and time < ?", basedef.STATE_FINISHED, now).Find(&wrapperTransactions)
-		if len(wrapperTransactions) > 0 {
-			wrapperTransactionsJson, _ := json.Marshal(wrapperTransactions)
-			logs.Error("There is unfinished transactions(%d) %s", now, string(wrapperTransactionsJson))
-		}
-	}
 	return nil
 }
 

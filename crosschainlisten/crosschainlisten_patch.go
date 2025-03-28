@@ -2,12 +2,13 @@ package crosschainlisten
 
 import (
 	"context"
+	"time"
+
 	"github.com/beego/beego/v2/core/logs"
 	"github.com/devfans/cogroup"
-	"poly-bridge/basedef"
+
 	"poly-bridge/conf"
 	"poly-bridge/crosschaindao/bridgedao"
-	"time"
 )
 
 var handlerMap = make(map[uint64]ChainHandle, 0)
@@ -40,9 +41,6 @@ func patchWrapperMissingTx(dao *bridgedao.BridgeDao) {
 	}
 	logs.Info("find %d TXs missing wrapper event", len(txs))
 	for _, tx := range txs {
-		if tx.ChainId == basedef.CONFLUX_CROSSCHAIN_ID {
-			continue
-		}
 		logs.Info("srcTransactions hash: %s missing wrapper_transactions", tx.Hash)
 		handler := handlerMap[tx.ChainId]
 		if handler == nil {

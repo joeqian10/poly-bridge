@@ -21,17 +21,19 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
+
 	"github.com/beego/beego/v2/core/logs"
 	"github.com/beego/beego/v2/server/web"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+
 	"poly-bridge/basedef"
 	"poly-bridge/cacheRedis"
 
 	"poly-bridge/conf"
 	"poly-bridge/models"
-	"strconv"
 )
 
 var db *gorm.DB
@@ -353,22 +355,6 @@ func (c *ExplorerController) GetCrossTx() {
 		relation.DstTransaction = dstTransaction
 		if dstTransaction.DstTransfer == nil {
 			dstTransaction.DstTransfer = new(models.DstTransfer)
-		}
-	}
-
-	if srcTransaction.DstChainId == basedef.O3_CROSSCHAIN_ID {
-		relatedPolyTransaction := new(models.PolyTransaction)
-		err = db.Where("src_hash = ?", relation.DstHash).First(relatedPolyTransaction).Error
-		if err == nil {
-			relation.RelatedPolyHash = relatedPolyTransaction.Hash
-		}
-	}
-
-	if srcTransaction.ChainId == basedef.O3_CROSSCHAIN_ID {
-		relatedDstTransaction := new(models.DstTransaction)
-		err = db.Where("hash = ?", relation.SrcHash).First(relatedDstTransaction).Error
-		if err == nil {
-			relation.RelatedPolyHash = relatedDstTransaction.PolyHash
 		}
 	}
 

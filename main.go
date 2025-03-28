@@ -48,7 +48,7 @@ func main() {
 
 func setupApp() *cli.App {
 	app := cli.NewApp()
-	app.Name = "poly bridge server"
+	app.Name = "bridge-http"
 	app.Usage = "poly-bridge http server"
 	app.Action = run
 	app.Version = "1.0.0"
@@ -83,12 +83,6 @@ func run(ctx *cli.Context) {
 		},
 	))
 
-	// TG bot
-	//common.TgBotInit()
-
-	// bridge http
-	//http.Init()
-
 	// explorer http
 	explorer.Init()
 	// redis
@@ -97,8 +91,6 @@ func run(ctx *cli.Context) {
 	// register http routers
 	web.AddNamespace(
 		web.NewNamespace("/v1",
-			//nft_http.Init(config),
-			//http.GetRouter(config),
 			explorer.GetRouter(),
 
 			//web.NSNamespace("/explorer",

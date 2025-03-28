@@ -18,39 +18,29 @@
 package crosschainlisten
 
 import (
-	"encoding/json"
 	"fmt"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"math"
-	"poly-bridge/cacheRedis"
-	"poly-bridge/common"
-	"poly-bridge/crosschainlisten/aptoslisten"
-	"poly-bridge/crosschainlisten/bfclisten"
-	"poly-bridge/crosschainlisten/ontevmlisten"
-	"poly-bridge/crosschainlisten/ripplelisten"
-	"poly-bridge/crosschainlisten/starcoinlisten"
-	"poly-bridge/crosschainlisten/zilliqalisten"
-	"poly-bridge/utils/decimal"
 	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/beego/beego/v2/core/logs"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/polynetwork/bridge-common/metrics"
+
 	"poly-bridge/basedef"
+	"poly-bridge/cacheRedis"
+	"poly-bridge/common"
 	"poly-bridge/conf"
 	"poly-bridge/crosschaindao"
 	"poly-bridge/crosschainlisten/ethereumlisten"
 	"poly-bridge/crosschainlisten/neo3listen"
-	"poly-bridge/crosschainlisten/neolisten"
-	"poly-bridge/crosschainlisten/o3listen"
-	"poly-bridge/crosschainlisten/ontologylisten"
+	"poly-bridge/crosschainlisten/ontevmlisten"
 	"poly-bridge/crosschainlisten/polylisten"
-	"poly-bridge/crosschainlisten/switcheolisten"
 	"poly-bridge/models"
-
-	"github.com/beego/beego/v2/core/logs"
+	"poly-bridge/utils/decimal"
 )
 
 var chainListens = make([]*CrossChainListen, 0)
@@ -97,38 +87,12 @@ func NewChainHandle(chainListenConfig *conf.ChainListenConfig) ChainHandle {
 	switch chainListenConfig.ChainId {
 	case basedef.POLY_CROSSCHAIN_ID:
 		return polylisten.NewPolyChainListen(chainListenConfig)
-	case basedef.ETHEREUM_CROSSCHAIN_ID, basedef.BSC_CROSSCHAIN_ID, basedef.PLT_CROSSCHAIN_ID, basedef.OK_CROSSCHAIN_ID,
-		basedef.HECO_CROSSCHAIN_ID, basedef.MATIC_CROSSCHAIN_ID, basedef.ARBITRUM_CROSSCHAIN_ID, basedef.XDAI_CROSSCHAIN_ID,
-		basedef.FANTOM_CROSSCHAIN_ID, basedef.AVAX_CROSSCHAIN_ID, basedef.OPTIMISTIC_CROSSCHAIN_ID, basedef.METIS_CROSSCHAIN_ID,
-		basedef.BOBA_CROSSCHAIN_ID, basedef.RINKEBY_CROSSCHAIN_ID, basedef.OASIS_CROSSCHAIN_ID, basedef.HARMONY_CROSSCHAIN_ID,
-		basedef.KCC_CROSSCHAIN_ID, basedef.BYTOM_CROSSCHAIN_ID, basedef.HSC_CROSSCHAIN_ID, basedef.KAVA_CROSSCHAIN_ID,
-		basedef.CUBE_CROSSCHAIN_ID, basedef.ZKSYNC_CROSSCHAIN_ID, basedef.CELO_CROSSCHAIN_ID, basedef.CLOVER_CROSSCHAIN_ID,
-		basedef.CONFLUX_CROSSCHAIN_ID, basedef.ASTAR_CROSSCHAIN_ID, basedef.BRISE_CROSSCHAIN_ID, basedef.DEXIT_CROSSCHAIN_ID,
-		basedef.CLOUDTX_CROSSCHAIN_ID, basedef.XINFIN_CROSSCHAIN_ID:
+	case basedef.ETHEREUM_CROSSCHAIN_ID, basedef.BSC_CROSSCHAIN_ID:
 		return ethereumlisten.NewEthereumChainListen(chainListenConfig)
-	case basedef.NEO_CROSSCHAIN_ID:
-		return neolisten.NewNeoChainListen(chainListenConfig)
-	case basedef.ONT_CROSSCHAIN_ID:
-		return ontologylisten.NewOntologyChainListen(chainListenConfig)
 	case basedef.ONTEVM_CROSSCHAIN_ID:
 		return ontevmlisten.NewOntevmChainListen(chainListenConfig)
-	case basedef.O3_CROSSCHAIN_ID:
-		return o3listen.NewO3ChainListen(chainListenConfig)
-	case basedef.SWITCHEO_CROSSCHAIN_ID:
-		return switcheolisten.NewSwitcheoChainListen(chainListenConfig)
 	case basedef.NEO3_CROSSCHAIN_ID:
 		return neo3listen.NewNeo3ChainListen(chainListenConfig)
-	case basedef.ZILLIQA_CROSSCHAIN_ID:
-		return zilliqalisten.NewZilliqaChainListen(chainListenConfig)
-	case basedef.STARCOIN_CROSSCHAIN_ID:
-		return starcoinlisten.NewStarcoinChainListen(chainListenConfig)
-	case basedef.RIPPLE_CROSSCHAIN_ID:
-		return ripplelisten.NewRippleChainListen(chainListenConfig)
-	case basedef.APTOS_CROSSCHAIN_ID:
-		return aptoslisten.NewAptosChainListen(chainListenConfig)
-	case basedef.BFC_CROSSCHAIN_ID:
-		return bfclisten.NewBfcChainListen(chainListenConfig)
-
 	default:
 		return nil
 	}
@@ -245,58 +209,6 @@ func (ccl *CrossChainListen) listenChain() (exit bool) {
 				logs.Info("backup ListenChain - chain %s db height is %d, listen height: %d", ccl.handle.GetChainName(), height, chain.Height)
 			} else {
 				switch ccl.handle.GetChainId() {
-				case basedef.BFC_CROSSCHAIN_ID:
-					h := ccl.handle
-					if bfc, ok := h.(*bfclisten.BfcChainListen); ok {
-						srcTxHash, dstTxHash := ccl.db.GetLatestTx(basedef.BFC_CROSSCHAIN_ID)
-						logs.Info("ListenChain - chain %s GetLatestTx crossChainEventCursor is: %s, VerifyHeaderAndExecuteTxEventCursor is: %s", ccl.handle.GetChainName(), srcTxHash, dstTxHash)
-
-						crossChainEvent, err := bfc.QueryCrossChainEvent(srcTxHash, bfc.BfcCfg.CCMContract)
-						switch err {
-						case nil:
-							if len(crossChainEvent.Data) > 0 {
-								srcTransactions, err := bfc.HandleSrcEvent(crossChainEvent, srcTxHash)
-								switch err {
-								case nil:
-									if len(srcTransactions) > 0 {
-										err = ccl.db.UpdateEvents(nil, srcTransactions, nil, nil, nil, nil)
-										if err != nil {
-											logs.Error("listenChain - cannot get chain %s UpdateEvents srcTransactions, srcTransaction hash %s, err: %s", ccl.handle.GetChainName(), srcTransactions[0].Hash, err)
-										}
-									}
-								default:
-									logs.Error("listenChain - cannot get chain %s HandleSrcEvent, cursor %s, err: %s", ccl.handle.GetChainName(), srcTxHash, err)
-								}
-							}
-						default:
-							logs.Error("listenChain - cannot get chain %s QueryCrossChainEvent, cursor %s, err: %s", ccl.handle.GetChainName(), srcTxHash, err)
-						}
-
-						verifyHeaderAndExecuteTxEvent, err := bfc.QueryVerifyHeaderAndExecuteTxEvent(dstTxHash, bfc.BfcCfg.CCMContract)
-						switch err {
-						case nil:
-							if len(verifyHeaderAndExecuteTxEvent.Data) > 0 {
-								dstTransactions, err := bfc.HandleDstEvent(verifyHeaderAndExecuteTxEvent, dstTxHash)
-								switch err {
-								case nil:
-									if len(dstTransactions) > 0 {
-										err = ccl.db.UpdateEvents(nil, nil, nil, dstTransactions, nil, nil)
-										if err != nil {
-											logs.Error("listenChain - cannot get chain %s UpdateEvents dstTransactions, dstTransactions hash %s, err: %s", ccl.handle.GetChainName(), dstTransactions[0].Hash, err)
-										}
-									}
-								default:
-									logs.Error("listenChain - cannot get chain %s HandleDstEvent, cursor %s, err: %s", ccl.handle.GetChainName(), dstTxHash, err)
-								}
-							}
-						default:
-							logs.Error("listenChain - cannot get chain %s QueryVerifyHeaderAndExecuteTxEvent, cursor %s, err: %s", ccl.handle.GetChainName(), dstTxHash, err)
-						}
-						if len(crossChainEvent.Data) == 0 && len(verifyHeaderAndExecuteTxEvent.Data) == 0 {
-							continue
-						}
-					}
-
 				default:
 					height, err = ccl.handle.GetLatestHeight()
 					if err != nil || height == 0 || height == math.MaxUint64 {
@@ -318,7 +230,7 @@ func (ccl *CrossChainListen) listenChain() (exit bool) {
 					logs.Info("ListenChain - chain %s latest height is %d, listen height: %d", ccl.handle.GetChainName(), height, chain.Height)
 				}
 			}
-			if basedef.IsETHChain(ccl.handle.GetChainId()) && ccl.handle.GetChainId() != basedef.O3_CROSSCHAIN_ID && ccl.handle.GetChainId() != basedef.ONTEVM_CROSSCHAIN_ID {
+			if basedef.IsETHChain(ccl.handle.GetChainId()) && ccl.handle.GetChainId() != basedef.ONTEVM_CROSSCHAIN_ID {
 				for chain.Height < height-ccl.handle.GetDefer() {
 					batchSize := ccl.handle.GetBatchSize() //concurrency size
 					if batchSize == 0 {
@@ -406,33 +318,6 @@ func (ccl *CrossChainListen) listenChain() (exit bool) {
 				}
 			} else {
 				switch ccl.handle.GetChainId() {
-				case basedef.APTOS_CROSSCHAIN_ID:
-					if ccl.handle.GetChainId() == basedef.APTOS_CROSSCHAIN_ID {
-						h := ccl.handle
-						if aptos, ok := h.(*aptoslisten.AptosChainListen); ok {
-							wrapperTransactions, srcTransactions, polyTransactions, dstTransactions, _, _, err := aptos.HandleEvent(ccl.db, 0, 0, 0)
-							if err != nil {
-								logs.Error("aptos HandleNewBlock chain：%s, err: %v", ccl.handle.GetChainName(), err)
-								return
-							}
-
-							logs.Info("aptos log")
-							marshal, _ := json.Marshal(wrapperTransactions)
-							logs.Info("wrapperTransactions=%s", marshal)
-
-							marshal, _ = json.Marshal(srcTransactions)
-							logs.Info("srcTransactions=%s", marshal)
-
-							marshal, _ = json.Marshal(dstTransactions)
-							logs.Info("dstTransactions=%s", marshal)
-
-							err = ccl.db.UpdateEvents(wrapperTransactions, srcTransactions, polyTransactions, dstTransactions, nil, nil)
-							if err != nil {
-								logs.Error("aptos updateEvents on block %d err: %v", height, err)
-							}
-						}
-					}
-				case basedef.BFC_CROSSCHAIN_ID:
 				default:
 					for chain.Height < height-ccl.handle.GetDefer() {
 						batchSize := ccl.handle.GetBatchSize()
@@ -517,11 +402,6 @@ func (ccl *CrossChainListen) checkLargeTransaction(srcTransactions []*models.Src
 				return
 			}
 
-			if ccl.isO3SwapTx(v) {
-				logs.Info("hash: %s is O3Swap, skip large TX check.", v.Hash)
-				return
-			}
-
 			if v.SrcTransfer != nil {
 				token, err := ccl.db.GetTokenBasicByHash(v.SrcTransfer.ChainId, v.SrcTransfer.Asset)
 				if err == nil {
@@ -548,9 +428,6 @@ func (ccl *CrossChainListen) checkLargeTransaction(srcTransactions []*models.Src
 }
 
 func (ccl *CrossChainListen) isO3SwapTx(src *models.SrcTransaction) bool {
-	if src.ChainId != basedef.O3_CROSSCHAIN_ID {
-		return false
-	}
 	if dst, err := ccl.db.GetDstTransactionByHash(src.Hash); err == nil && dst != nil {
 		return true
 	}

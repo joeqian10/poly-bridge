@@ -20,9 +20,11 @@ package explorerdao
 import (
 	"encoding/json"
 	"fmt"
+
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+
 	"poly-bridge/basedef"
 	"poly-bridge/conf"
 	serverconf "poly-bridge/conf"
@@ -370,18 +372,12 @@ func (dao *ExplorerDao) BuildTokens(tokens []*models.TokenBasic) ([]*Token, []*T
 func (dao *ExplorerDao) tokenType(chainId uint64) string {
 	if chainId == basedef.ETHEREUM_CROSSCHAIN_ID {
 		return "erc20"
-	} else if chainId == basedef.NEO_CROSSCHAIN_ID {
-		return "nep4"
-	} else if chainId == basedef.HECO_CROSSCHAIN_ID {
-		return "hrc20"
+	} else if chainId == basedef.NEO3_CROSSCHAIN_ID {
+		return "nep17"
 	} else if chainId == basedef.BSC_CROSSCHAIN_ID {
 		return "bep20"
-	} else if chainId == basedef.ONT_CROSSCHAIN_ID {
-		return "oep4"
 	} else if chainId == basedef.ONTEVM_CROSSCHAIN_ID {
 		return "erc20"
-	} else if chainId == basedef.OK_CROSSCHAIN_ID {
-		return "kip20"
 	} else {
 		return ""
 	}
