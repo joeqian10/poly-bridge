@@ -92,10 +92,6 @@ func run(ctx *cli.Context) {
 	web.AddNamespace(
 		web.NewNamespace("/v1",
 			explorer.GetRouter(),
-
-			//web.NSNamespace("/explorer",
-			//	web.NSRouter("/getcrosstx", &ExplorerController{}, "get:GetCrossTx")
-			//),
 		),
 	)
 
