@@ -3,10 +3,13 @@ package ethereumlisten
 import (
 	"encoding/hex"
 	"fmt"
+	"math/big"
+	"strings"
+
 	"github.com/beego/beego/v2/core/logs"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"math/big"
+
 	"poly-bridge/basedef"
 	"poly-bridge/go_abi/eccm_abi"
 	"poly-bridge/go_abi/lock_proxy_abi"
@@ -15,10 +18,9 @@ import (
 	"poly-bridge/go_abi/swapper_abi"
 	"poly-bridge/go_abi/wrapper_abi"
 	"poly-bridge/models"
-	"strings"
 )
 
-//HandleNewBatchBlock
+// HandleNewBatchBlock
 func (this *EthereumChainListen) HandleNewBatchBlock(start, end uint64) ([]*models.WrapperTransaction, []*models.SrcTransaction, []*models.PolyTransaction, []*models.DstTransaction, int, int, error) {
 	backStart := start*2 - end - 1
 	if backStart > 0 {
@@ -167,14 +169,7 @@ func (this *EthereumChainListen) HandleNewBatchBlock(start, end uint64) ([]*mode
 				srcTransfer.Asset = models.FormatString(lock.FromAssetHash)
 				srcTransfer.Amount = models.NewBigInt(lock.Amount)
 				srcTransfer.DstChainId = uint64(lock.ToChainId)
-				if srcTransfer.DstChainId == basedef.APTOS_CROSSCHAIN_ID {
-					aptosAsset, err := hex.DecodeString(toAssetHash)
-					if err == nil {
-						toAssetHash = string(aptosAsset)
-					} else {
-						logs.Error("fail to decode Aptos toAssetHash, chain: %s, hash: %s,  err: %v", basedef.GetChainName(this.ethCfg.ChainId), srcTransfer.TxHash, err)
-					}
-				}
+
 				srcTransfer.DstAsset = models.FormatAssert(toAssetHash)
 				srcTransfer.DstUser = models.FormatString(lock.ToAddress)
 				srcTransaction.SrcTransfer = srcTransfer
@@ -311,10 +306,6 @@ func (this *EthereumChainListen) ParseWrapperEventByLog(contractlogs []types.Log
 					FeeTokenHash: func() string {
 						if !strings.EqualFold(v.Address.String(), wrapperV1Contract.String()) {
 							switch this.GetChainId() {
-							case basedef.METIS_CROSSCHAIN_ID:
-								return "deaddeaddeaddeaddeaddeaddeaddeaddead0000"
-							case basedef.PLT_CROSSCHAIN_ID:
-								return models.FormatString(strings.ToLower(evt.FromAsset.String()[2:]))
 							default:
 								return "0000000000000000000000000000000000000000"
 							}

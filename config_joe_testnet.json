@@ -85,7 +85,10 @@
       "ChainId": 334,
       "Nodes": [
         {
-          "Url": "https://polaris1.ont.io:10339"
+          "Url": "https://polaris1.ont.io:10336"
+        },
+        {
+          "Url": "https://polaris2.ont.io:10336"
         }
       ],
       "ExtendNodes": []
